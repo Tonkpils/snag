@@ -40,7 +40,7 @@ func NewBuilder() (*Bob, error) {
 
 func (b *Bob) Close() {
 	b.w.Close()
-	b.done <- struct{}{}
+	close(b.done)
 }
 
 func (b *Bob) Watch() error {
@@ -65,7 +65,6 @@ func (b *Bob) Watch() error {
 						b.w.Remove(ev.Name)
 						delete(b.watching, ev.Name)
 					}
-
 					queueBuild = true
 				case isModify(ev.Op):
 					queueBuild = true
@@ -129,16 +128,14 @@ func (b *Bob) watch(path string) bool {
 		if fileInfo.IsDir() {
 			if err := b.w.Add(p); err != nil {
 				return err
-			} else {
-				b.watching[p] = struct{}{}
 			}
+			b.watching[p] = struct{}{}
 		} else {
 			shouldBuild = true
 		}
 		return nil
 	})
 	return shouldBuild
-
 }
 
 func isCreate(op fsn.Op) bool {
