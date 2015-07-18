@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
+	"github.com/Tonkpils/snag/vow"
 	fsn "gopkg.in/fsnotify.v1"
 )
 
@@ -89,29 +89,32 @@ func (b *Bob) maybeQueue(path string) {
 		return
 	}
 
+	// setup list of commands
+	v := vow.To("go", "build", "./...")
+	v.Then("go", "vet", "./...")
+	v.Then("go", "test", "./...")
+
 	stat, err := os.Stat(path)
 	if err == nil {
 		mtime := stat.ModTime()
 		lasttime := mtimes[path]
 		if !mtime.Equal(lasttime) {
 			mtimes[path] = mtime
-			cmd := exec.Command("go", "test")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stdout
-
-			if err := cmd.Run(); err != nil {
-				fmt.Println(err)
+			result := v.Exec()
+			if result.Failed {
+				fmt.Println("Failed")
+			} else {
+				fmt.Println("Passed")
 			}
 		}
 	} else {
 		log.Println(err)
 		delete(mtimes, path)
-		cmd := exec.Command("go", "test")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stdout
-
-		if err := cmd.Run(); err != nil {
-			fmt.Println(err)
+		result := v.Exec()
+		if result.Failed {
+			fmt.Println("Failed")
+		} else {
+			fmt.Println("Passed")
 		}
 	}
 }
