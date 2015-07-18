@@ -100,22 +100,12 @@ func (b *Bob) maybeQueue(path string) {
 		lasttime := mtimes[path]
 		if !mtime.Equal(lasttime) {
 			mtimes[path] = mtime
-			result := v.Exec()
-			if result.Failed {
-				fmt.Println("Failed")
-			} else {
-				fmt.Println("Passed")
-			}
+			v.Exec(os.Stdout)
 		}
 	} else {
 		log.Println(err)
 		delete(mtimes, path)
-		result := v.Exec()
-		if result.Failed {
-			fmt.Println("Failed")
-		} else {
-			fmt.Println("Passed")
-		}
+		v.Exec(os.Stdout)
 	}
 }
 

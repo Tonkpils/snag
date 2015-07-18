@@ -6,9 +6,11 @@ package vow
 
 import (
 	"bytes"
+	"io"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // Vow represents a batch of commands being prepared to run
@@ -31,12 +33,16 @@ func (vow *Vow) Then(name string, args ...string) {
 	vow.cmds = append(vow.cmds, exec.Command(name, args...))
 }
 
-// Exec runs all of the commands a Vow has and returns a Result
-func (vow *Vow) Exec() *Result {
+// Exec runs all of the commands a Vow has with all output redirected
+// to the given writer and returns a Result
+func (vow *Vow) Exec(w io.Writer) *Result {
+	// clear scroll buffer
+	print("\033c")
+
 	r := new(Result)
 	var runCount int
 	for runCount < len(vow.cmds) {
-		command := vow.runCmd(vow.cmds[runCount])
+		command := vow.runCmd(vow.cmds[runCount], w)
 		r.results = append(r.results, command)
 
 		// manually increment the counter so that
@@ -65,11 +71,14 @@ func (vow *Vow) Exec() *Result {
 	return r
 }
 
-func (vow *Vow) runCmd(cmd *exec.Cmd) (result cmdResult) {
+func (vow *Vow) runCmd(cmd *exec.Cmd, w io.Writer) (result cmdResult) {
 	var b bytes.Buffer
-	cmd.Stdout = &b
-	cmd.Stderr = &b
+	mw := io.MultiWriter(&b, w)
 
+	cmd.Stdout = mw
+	cmd.Stderr = mw
+
+	cmd.Stdout.Write([]byte(strings.Join(cmd.Args, " ") + "\n"))
 	if err := cmd.Start(); err != nil {
 		vow.errlog.Println("err start", err)
 		// could not start cmd
