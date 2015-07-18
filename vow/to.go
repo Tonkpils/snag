@@ -1,3 +1,7 @@
+/*
+Package vow provides a promise like api for executing
+a batch of external commands
+*/
 package vow
 
 import (
@@ -7,11 +11,13 @@ import (
 	"os/exec"
 )
 
+// Vow represents a batch of commands being prepared to run
 type Vow struct {
 	cmds   []*exec.Cmd
 	errlog *log.Logger
 }
 
+// To returns a new Vow that is configured to execute command given.
 func To(name string, args ...string) *Vow {
 	cmd := exec.Command(name, args...)
 	return &Vow{
@@ -20,11 +26,12 @@ func To(name string, args ...string) *Vow {
 	}
 }
 
-func (vow *Vow) Then(name string, args ...string) *Vow {
+// Then adds the given command to the list of commands the Vow will execute
+func (vow *Vow) Then(name string, args ...string) {
 	vow.cmds = append(vow.cmds, exec.Command(name, args...))
-	return vow
 }
 
+// Exec runs all of the commands a Vow has and returns a Result
 func (vow *Vow) Exec() *Result {
 	r := new(Result)
 	var runCount int

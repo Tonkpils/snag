@@ -5,11 +5,11 @@ import (
 	"os"
 )
 
-// Result represents the outcome of all the command that
-// were executed
+// Result represents the outcome of the Vow that was run
 type Result struct {
-	// Whether or not the result was successful
-	Failed   bool
+	// Failed will be true if any command was not successful
+	Failed bool
+
 	results  []cmdResult
 	executed int
 }
