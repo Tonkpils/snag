@@ -24,26 +24,29 @@ type Bob struct {
 	done     chan struct{}
 	watching map[string]struct{}
 
-	packages  string
-	buildArgs string
-	vetArgs   string
-	testArgs  string
+	buildArgs []string
+	vetArgs   []string
+	testArgs  []string
 }
 
-func NewBuilder(packages, build, vet, test string) (*Bob, error) {
+func NewBuilder(packages string, build, vet, test []string) (*Bob, error) {
 	w, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
+	b := append([]string{"build", packages}, build...)
+	v := append([]string{"vet", packages}, vet...)
+	t := append([]string{"test"}, test...)
+	t = append(t, packages)
+
 	return &Bob{
 		w:         w,
 		done:      make(chan struct{}),
 		watching:  map[string]struct{}{},
-		packages:  packages,
-		buildArgs: build,
-		vetArgs:   vet,
-		testArgs:  test,
+		buildArgs: b,
+		vetArgs:   v,
+		testArgs:  t,
 	}, nil
 }
 
@@ -104,9 +107,9 @@ func (b *Bob) maybeQueue(path string) {
 
 func (b *Bob) execute() {
 	b.clearBuffer()
-	vow.To("go", "build", b.packages, b.buildArgs).
-		Then("go", "vet", b.packages, b.vetArgs).
-		Then("go", "test", b.testArgs, b.packages).
+	vow.To("go", b.buildArgs...).
+		Then("go", b.vetArgs...).
+		Then("go", b.testArgs...).
 		Exec(os.Stdout)
 }
 

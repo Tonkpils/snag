@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 )
 
 var (
@@ -14,9 +15,9 @@ var (
 )
 
 const (
-	buildDesc   = "arguments given to the build command"
-	vetDesc     = "arguments given to the vet command"
-	testDesc    = "arguments given to the test command"
+	buildDesc   = "comma delimited list of arguments given to the build command"
+	vetDesc     = "comma delimited list of arguments given to the vet command"
+	testDesc    = "comma delimited list of arguments given to the test command"
 	packageDesc = "packages to run commands on"
 )
 
@@ -30,7 +31,12 @@ func init() {
 func main() {
 	flag.Parse()
 
-	b, err := NewBuilder(packages, buildArgs, vetArgs, testArgs)
+	b, err := NewBuilder(
+		packages,
+		strings.Split(buildArgs, ","),
+		strings.Split(vetArgs, ","),
+		strings.Split(testArgs, ","),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
