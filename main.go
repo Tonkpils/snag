@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"os"
+)
 
 func main() {
 	b, err := NewBuilder()
@@ -9,5 +12,10 @@ func main() {
 	}
 	defer b.Close()
 
-	b.Watch()
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	b.Watch(wd)
 }

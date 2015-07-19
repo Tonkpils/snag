@@ -43,13 +43,8 @@ func (b *Bob) Close() {
 	close(b.done)
 }
 
-func (b *Bob) Watch() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	b.watch(wd)
+func (b *Bob) Watch(path string) error {
+	b.watch(path)
 
 	for {
 		select {
