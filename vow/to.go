@@ -36,9 +36,6 @@ func (vow *Vow) Then(name string, args ...string) {
 // Exec runs all of the commands a Vow has with all output redirected
 // to the given writer and returns a Result
 func (vow *Vow) Exec(w io.Writer) *Result {
-	// clear scroll buffer
-	print("\033c")
-
 	r := new(Result)
 	var runCount int
 	for runCount < len(vow.cmds) {

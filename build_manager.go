@@ -89,6 +89,9 @@ func (b *Bob) maybeQueue(path string) {
 		return
 	}
 
+	// clear scroll buffer
+	print("\033c")
+
 	// setup list of commands
 	v := vow.To("go", "build", "./...")
 	v.Then("go", "vet", "./...")
