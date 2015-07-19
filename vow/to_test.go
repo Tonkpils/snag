@@ -25,8 +25,9 @@ func TestThen(t *testing.T) {
 	for i := 0; i < totalCmds; i++ {
 		vow.Then("foo", "bar", "baz")
 	}
+	vow.Then("foo").Then("another")
 
-	assert.Len(t, vow.cmds, totalCmds)
+	assert.Len(t, vow.cmds, totalCmds+2)
 }
 
 func TestExec(t *testing.T) {

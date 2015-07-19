@@ -29,8 +29,9 @@ func To(name string, args ...string) *Vow {
 }
 
 // Then adds the given command to the list of commands the Vow will execute
-func (vow *Vow) Then(name string, args ...string) {
+func (vow *Vow) Then(name string, args ...string) *Vow {
 	vow.cmds = append(vow.cmds, exec.Command(name, args...))
+	return vow
 }
 
 // Exec runs all of the commands a Vow has with all output redirected

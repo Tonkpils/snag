@@ -80,9 +80,9 @@ func (b *Bob) maybeQueue(path string) {
 	}
 
 	// setup list of commands
-	v := vow.To("go", "build", "./...")
-	v.Then("go", "vet", "./...")
-	v.Then("go", "test", "./...")
+	v := vow.To("go", "build", "./...").
+		Then("go", "vet", "./...").
+		Then("go", "test", "./...")
 
 	stat, err := os.Stat(path)
 	if err == nil {
