@@ -16,9 +16,12 @@ before_install:
   - go get github.com/mattn/goveralls
   - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 
+  # get our dependencies
+  - go get -t
+
 install:
   # make sure stuff actually builds
-  - go get -t go build
+  - go build
 
 script:
   # ensure everything is formatted all pretty like
@@ -26,7 +29,6 @@ script:
   # vet out possible issues
   - go vet ./...
   # run tests
-  - go get -t
   - $HOME/gopath/bin/goveralls -service=travis-ci -repotoken=$COVERALLS -v
 
 after_script:
