@@ -44,6 +44,7 @@ func (b *Bob) Close() {
 }
 
 func (b *Bob) Watch(path string) error {
+	b.clearBuffer()
 	b.watch(path)
 
 	for {
@@ -78,9 +79,6 @@ func (b *Bob) maybeQueue(path string) {
 		return
 	}
 
-	// clear scroll buffer
-	fmt.Print("\033c")
-
 	// setup list of commands
 	v := vow.To("go", "build", "./...")
 	v.Then("go", "vet", "./...")
@@ -92,12 +90,18 @@ func (b *Bob) maybeQueue(path string) {
 		lasttime := mtimes[path]
 		if !mtime.Equal(lasttime) {
 			mtimes[path] = mtime
+			b.clearBuffer()
 			v.Exec(os.Stdout)
 		}
 	} else {
 		delete(mtimes, path)
+		b.clearBuffer()
 		v.Exec(os.Stdout)
 	}
+}
+
+func (b *Bob) clearBuffer() {
+	fmt.Print("\033c")
 }
 
 func (b *Bob) watch(path string) bool {
