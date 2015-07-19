@@ -15,8 +15,19 @@ var (
 	mtimes = map[string]time.Time{}
 )
 
+// supported file extensions
 const (
 	GoExt = ".go"
+)
+
+// BuildTool represents a program that builds/tests code
+type BuildTool string
+
+// supported build tools
+const (
+	BuildToolGo    = "go"
+	BuildToolGodep = "godep"
+	BuildToolGB    = "gb"
 )
 
 type Bob struct {
@@ -24,6 +35,7 @@ type Bob struct {
 	done     chan struct{}
 	watching map[string]struct{}
 
+	buildTool string
 	buildArgs []string
 	vetArgs   []string
 	testArgs  []string
@@ -52,6 +64,14 @@ func NewBuilder(packages, build, vet, test []string) (*Bob, error) {
 		vetArgs:   v,
 		testArgs:  t,
 	}, nil
+}
+
+func (b *Bob) BuildWith(bt BuildTool) {
+	b.buildTool = string(bt)
+	if b.buildTool == BuildToolGodep {
+		b.buildArgs = append([]string{"go"}, b.buildArgs...)
+		b.testArgs = append([]string{"go"}, b.testArgs...)
+	}
 }
 
 func (b *Bob) Close() {
@@ -111,9 +131,9 @@ func (b *Bob) maybeQueue(path string) {
 
 func (b *Bob) execute() {
 	b.clearBuffer()
-	vow.To("go", b.buildArgs...).
+	vow.To(b.buildTool, b.buildArgs...).
 		Then("go", b.vetArgs...).
-		Then("go", b.testArgs...).
+		Then(b.buildTool, b.testArgs...).
 		Exec(os.Stdout)
 }
 
