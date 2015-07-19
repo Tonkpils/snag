@@ -18,7 +18,7 @@ const (
 	buildDesc   = "comma delimited list of arguments given to the build command"
 	vetDesc     = "comma delimited list of arguments given to the vet command"
 	testDesc    = "comma delimited list of arguments given to the test command"
-	packageDesc = "packages to run commands on"
+	packageDesc = "comma delimited list of packages to run commands on"
 )
 
 func init() {
@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	b, err := NewBuilder(
-		packages,
+		strings.Split(packages, ","),
 		strings.Split(buildArgs, ","),
 		strings.Split(vetArgs, ","),
 		strings.Split(testArgs, ","),

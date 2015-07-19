@@ -29,16 +29,20 @@ type Bob struct {
 	testArgs  []string
 }
 
-func NewBuilder(packages string, build, vet, test []string) (*Bob, error) {
+func NewBuilder(packages, build, vet, test []string) (*Bob, error) {
 	w, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
-	b := append([]string{"build", packages}, build...)
-	v := append([]string{"vet", packages}, vet...)
+	b := append([]string{"build"}, build...)
+	b = append(b, packages...)
+
+	v := append([]string{"vet"}, vet...)
+	v = append(v, packages...)
+
 	t := append([]string{"test"}, test...)
-	t = append(t, packages)
+	t = append(t, packages...)
 
 	return &Bob{
 		w:         w,
