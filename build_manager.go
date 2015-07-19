@@ -44,8 +44,8 @@ func (b *Bob) Close() {
 }
 
 func (b *Bob) Watch(path string) error {
-	b.clearBuffer()
 	b.watch(path)
+	b.execute()
 
 	for {
 		select {
@@ -79,25 +79,26 @@ func (b *Bob) maybeQueue(path string) {
 		return
 	}
 
-	// setup list of commands
-	v := vow.To("go", "build", "./...").
-		Then("go", "vet", "./...").
-		Then("go", "test", "./...")
-
 	stat, err := os.Stat(path)
 	if err == nil {
 		mtime := stat.ModTime()
 		lasttime := mtimes[path]
 		if !mtime.Equal(lasttime) {
 			mtimes[path] = mtime
-			b.clearBuffer()
-			v.Exec(os.Stdout)
+			b.execute()
 		}
 	} else {
 		delete(mtimes, path)
-		b.clearBuffer()
-		v.Exec(os.Stdout)
+		b.execute()
 	}
+}
+
+func (b *Bob) execute() {
+	b.clearBuffer()
+	vow.To("go", "build", "./...").
+		Then("go", "vet", "./...").
+		Then("go", "test", "./...").
+		Exec(os.Stdout)
 }
 
 func (b *Bob) clearBuffer() {
