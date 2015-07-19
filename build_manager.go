@@ -49,14 +49,11 @@ func (b *Bob) Watch(path string) error {
 	for {
 		select {
 		case ev := <-b.w.Events:
-			fmt.Println(ev)
 			var queueBuild bool
 			switch {
 			case isCreate(ev.Op):
-				fmt.Println("Creating")
 				queueBuild = b.watch(ev.Name)
 			case isDelete(ev.Op):
-				fmt.Println("Deleteing")
 				if _, ok := b.watching[ev.Name]; ok {
 					b.w.Remove(ev.Name)
 					delete(b.watching, ev.Name)
@@ -98,7 +95,6 @@ func (b *Bob) maybeQueue(path string) {
 			v.Exec(os.Stdout)
 		}
 	} else {
-		log.Println(err)
 		delete(mtimes, path)
 		v.Exec(os.Stdout)
 	}
