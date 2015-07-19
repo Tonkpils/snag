@@ -23,18 +23,27 @@ type Bob struct {
 	w        *fsn.Watcher
 	done     chan struct{}
 	watching map[string]struct{}
+
+	packages  string
+	buildArgs string
+	vetArgs   string
+	testArgs  string
 }
 
-func NewBuilder() (*Bob, error) {
+func NewBuilder(packages, build, vet, test string) (*Bob, error) {
 	w, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Bob{
-		w:        w,
-		done:     make(chan struct{}),
-		watching: map[string]struct{}{},
+		w:         w,
+		done:      make(chan struct{}),
+		watching:  map[string]struct{}{},
+		packages:  packages,
+		buildArgs: build,
+		vetArgs:   vet,
+		testArgs:  test,
 	}, nil
 }
 
@@ -95,9 +104,9 @@ func (b *Bob) maybeQueue(path string) {
 
 func (b *Bob) execute() {
 	b.clearBuffer()
-	vow.To("go", "build", "./...").
-		Then("go", "vet", "./...").
-		Then("go", "test", "./...").
+	vow.To("go", "build", b.packages, b.buildArgs).
+		Then("go", "vet", b.packages, b.vetArgs).
+		Then("go", "test", b.packages, b.testArgs).
 		Exec(os.Stdout)
 }
 
