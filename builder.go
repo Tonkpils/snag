@@ -106,7 +106,7 @@ func (b *Bob) execute() {
 	b.clearBuffer()
 	vow.To("go", "build", b.packages, b.buildArgs).
 		Then("go", "vet", b.packages, b.vetArgs).
-		Then("go", "test", b.packages, b.testArgs).
+		Then("go", "test", b.testArgs, b.packages).
 		Exec(os.Stdout)
 }
 
