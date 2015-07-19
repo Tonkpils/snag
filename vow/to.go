@@ -77,8 +77,8 @@ func (vow *Vow) runCmd(cmd *exec.Cmd, w io.Writer) (result cmdResult) {
 
 	cmd.Stdout.Write([]byte(strings.Join(cmd.Args, " ") + "\n"))
 	if err := cmd.Start(); err != nil {
-		vow.errlog.Println("err start", err)
-		// could not start cmd
+		mw.Write([]byte(err.Error() + "\n"))
+		result.failed = true
 		return
 	}
 
