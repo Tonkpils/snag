@@ -49,39 +49,36 @@ func (b *Bob) Watch() error {
 		return err
 	}
 
-	go func() {
-		for {
-			select {
-			case ev := <-b.w.Events:
-				fmt.Println(ev)
-				var queueBuild bool
-				switch {
-				case isCreate(ev.Op):
-					fmt.Println("Creating")
-					queueBuild = b.watch(ev.Name)
-				case isDelete(ev.Op):
-					fmt.Println("Deleteing")
-					if _, ok := b.watching[ev.Name]; ok {
-						b.w.Remove(ev.Name)
-						delete(b.watching, ev.Name)
-					}
-					queueBuild = true
-				case isModify(ev.Op):
-					queueBuild = true
-				}
-				if queueBuild {
-					b.maybeQueue(ev.Name)
-				}
-			case err := <-b.w.Errors:
-				log.Println("error:", err)
-			}
-		}
-	}()
 	b.watch(wd)
 
-	<-b.done
-
-	return nil
+	for {
+		select {
+		case ev := <-b.w.Events:
+			fmt.Println(ev)
+			var queueBuild bool
+			switch {
+			case isCreate(ev.Op):
+				fmt.Println("Creating")
+				queueBuild = b.watch(ev.Name)
+			case isDelete(ev.Op):
+				fmt.Println("Deleteing")
+				if _, ok := b.watching[ev.Name]; ok {
+					b.w.Remove(ev.Name)
+					delete(b.watching, ev.Name)
+				}
+				queueBuild = true
+			case isModify(ev.Op):
+				queueBuild = true
+			}
+			if queueBuild {
+				b.maybeQueue(ev.Name)
+			}
+		case err := <-b.w.Errors:
+			log.Println("error:", err)
+		case <-b.done:
+			return nil
+		}
+	}
 }
 
 func (b *Bob) maybeQueue(path string) {
