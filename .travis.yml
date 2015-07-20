@@ -36,3 +36,58 @@ after_script:
     if [[ "$TRAVIS_PULL_REQUEST" == "false" ]] && [[ "$TRAVIS_BRANCH" == "master" ]]; then
       go list ./... | xargs -n 1 -I{} curl http://godoc.org/-/refresh -d path={}
     fi
+
+before_deploy:
+  - PLATFORMS=(darwin/386 darwin/amd64 freebsd/386 freebsd/amd64 freebsd/arm linux/386 linux/amd64 linux/arm windows/386 windows/amd64)
+  - BINARY=snag
+ # compile all go os/archs
+  - |
+    current_dir=$(pwd)
+    cd $(go env GOROOT)/src
+    for PLATFORM in "${PLATFORMS[@]}"; do
+      if ! GOOS=${PLATFORM%/*} GOARCH=${PLATFORM#*/} ./make.bash --no-clean 2>&1; then
+        echo "Failed installed go stdlib for $PLATFORM" && exit 1
+      fi
+    done
+    cd $current_dir
+ # build binary for all archs
+  - |
+    for PLATFORM in "${PLATFORMS[@]}"; do
+      echo "Building $PLATFORM"
+      GOOS=${PLATFORM%/*}
+      GOARCH=${PLATFORM#*/}
+      if [ "$GOOS" = "windows" ]; then
+        build_cmd="GOOS=$GOOS GOARCH=$GOARCH go build -o snag -ldflags '-w -s'"
+      else
+        build_cmd="CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o snag -ldflags '-d -w -s'"
+      fi
+      if ! eval $build_cmd; then
+        echo "Failed building snag for $PLATFORM" && return 1
+      fi
+      if ! zip -9 snag-${GOOS}-${GOARCH}.zip snag; then
+        echo "Failed to zip snag for $PLATFORM" && return 1
+      fi
+      echo "snag-${GOOS}-${GOARCH}.zip"
+    done
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_AUTH_TOKEN
+  file:
+    - "snag-darwin-386.zip"
+    - "snag-darwin-amd64.zip"
+
+    - "snag-freebsd-386.zip"
+    - "snag-freebsd-arm.zip"
+    - "snag-freebsd-amd64.zip"
+
+    - "snag-linux-386.zip"
+    - "snag-linux-arm.zip"
+    - "snag-linux-amd64.zip"
+
+    - "snag-windows-386.zip"
+    - "snag-windows-amd64.zip"
+
+  skip_cleanup: true
+  on:
+    tags: true
