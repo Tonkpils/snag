@@ -6,10 +6,10 @@ go:
   - tip
 
 before_install:
-  # linting tools
   - go get github.com/golang/lint/golint
   - go get golang.org/x/tools/cmd/vet
   - go get github.com/fzipp/gocyclo
+  - go get github.com/mattn/goveralls
 
   # get our dependencies
   - go get -t ./...
@@ -36,6 +36,21 @@ after_script:
     if [[ "$TRAVIS_PULL_REQUEST" == "false" ]] && [[ "$TRAVIS_BRANCH" == "master" ]]; then
       go list ./... | xargs -n 1 -I{} curl http://godoc.org/-/refresh -d path={}
     fi
+  - |
+    echo "mode: count" > profile.cov
+    for dir in $(find . -maxdepth 10 -not -path './.git*' -not -path '*/_*' -type d);
+    do
+    if ls $dir/*.go &> /dev/null; then
+      go test -short -covermode=count -coverprofile=$dir/profile.tmp $dir
+      if [ -f $dir/profile.tmp ]
+      then
+        cat $dir/profile.tmp | tail -n +2 >> profile.cov
+        rm $dir/profile.tmp
+      fi
+    fi
+    done
+    go tool cover -func profile.cov
+    goveralls -coverprofile=profile.cov -service=travis-ci -repotoken=$COVERALLS -v
 
 before_deploy:
   - PLATFORMS=(darwin/386 darwin/amd64 freebsd/386 freebsd/amd64 freebsd/arm linux/386 linux/amd64 linux/arm windows/386 windows/amd64)
