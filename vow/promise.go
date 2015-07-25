@@ -2,26 +2,27 @@ package vow
 
 import (
 	"io"
-	"log"
 	"os/exec"
 	"strings"
 	"syscall"
 	"time"
 )
 
-var pollTime = 50 * time.Millisecond
-
 type promise struct {
-	cmd *exec.Cmd
+	cmd    *exec.Cmd
+	closed chan struct{}
 }
 
 func newPromise(name string, args ...string) *promise {
 	return &promise{
-		cmd: exec.Command(name, args...),
+		cmd:    exec.Command(name, args...),
+		closed: make(chan struct{}),
 	}
 }
 
 func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
+	defer close(p.closed)
+
 	cw := newCdmWriter(w)
 	defer cw.Close()
 
@@ -34,7 +35,10 @@ func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
 		return result, err
 	}
 
-	go p.monitorClose(cw)
+	go func() {
+		<-p.closed
+		cw.Close()
+	}()
 
 	if err := p.cmd.Wait(); err != nil {
 		result.failed = true
@@ -60,25 +64,7 @@ func (p *promise) stop() {
 
 		p.cmd.Process.Signal(syscall.SIGTERM)
 
-		for ; p.cmd.ProcessState != nil && !p.cmd.ProcessState.Exited(); <-time.After(pollTime) {
-		}
-	}
-}
-
-func (p *promise) monitorClose(w io.WriteCloser) {
-	for ; p.cmd.ProcessState == nil; time.After(pollTime) {
-	}
-
-	for ; ; <-time.After(pollTime) {
-		status := p.cmd.ProcessState.Sys().(syscall.WaitStatus)
-		switch {
-		case status.Signaled():
-			w.Close()
-			return
-		case status.Exited(), status.Stopped():
-			return
-		default:
-			log.Printf("signal %#v\n", status)
+		for ; p.cmd.ProcessState != nil && !p.cmd.ProcessState.Exited(); <-time.After(100 * time.Millisecond) {
 		}
 	}
 }
