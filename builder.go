@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Tonkpils/snag/vow"
@@ -32,6 +33,8 @@ const (
 
 type Bob struct {
 	w        *fsn.Watcher
+	mtx      sync.RWMutex
+	curVow   *vow.Vow
 	done     chan struct{}
 	watching map[string]struct{}
 
@@ -129,12 +132,24 @@ func (b *Bob) maybeQueue(path string) {
 	}
 }
 
+func (b *Bob) stopCurVow() {
+	if b.curVow != nil {
+		b.mtx.Lock()
+		b.curVow.Close()
+		b.mtx.Unlock()
+	}
+}
+
 func (b *Bob) execute() {
+	b.stopCurVow()
+
 	b.clearBuffer()
-	vow.To(b.buildTool, b.buildArgs...).
+	b.mtx.Lock()
+	b.curVow = vow.To(b.buildTool, b.buildArgs...).
 		Then("go", b.vetArgs...).
-		Then(b.buildTool, b.testArgs...).
-		Exec(os.Stdout)
+		Then(b.buildTool, b.testArgs...)
+	go b.curVow.Exec(os.Stdout)
+	b.mtx.Unlock()
 }
 
 func (b *Bob) clearBuffer() {

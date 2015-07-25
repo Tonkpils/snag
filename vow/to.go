@@ -5,33 +5,40 @@ a batch of external commands
 package vow
 
 import (
-	"bytes"
 	"io"
-	"log"
-	"os"
-	"os/exec"
-	"strings"
+	"sync/atomic"
 )
 
 // Vow represents a batch of commands being prepared to run
 type Vow struct {
-	cmds   []*exec.Cmd
-	errlog *log.Logger
+	cancled *int32
+
+	cmds []*promise
 }
 
 // To returns a new Vow that is configured to execute command given.
 func To(name string, args ...string) *Vow {
-	cmd := exec.Command(name, args...)
 	return &Vow{
-		cmds:   []*exec.Cmd{cmd},
-		errlog: log.New(os.Stderr, "To - ", log.Lshortfile),
+		cmds:    []*promise{newPromise(name, args...)},
+		cancled: new(int32),
 	}
 }
 
 // Then adds the given command to the list of commands the Vow will execute
 func (vow *Vow) Then(name string, args ...string) *Vow {
-	vow.cmds = append(vow.cmds, exec.Command(name, args...))
+	vow.cmds = append(vow.cmds, newPromise(name, args...))
 	return vow
+}
+
+func (vow *Vow) Close() {
+	atomic.StoreInt32(vow.cancled, 1)
+	for i := 0; i < len(vow.cmds); i++ {
+		vow.cmds[i].stop()
+	}
+}
+
+func (vow *Vow) isCancled() bool {
+	return atomic.LoadInt32(vow.cancled) == 1
 }
 
 // Exec runs all of the commands a Vow has with all output redirected
@@ -39,16 +46,20 @@ func (vow *Vow) Then(name string, args ...string) *Vow {
 func (vow *Vow) Exec(w io.Writer) *Result {
 	r := new(Result)
 	var runCount int
-	for runCount < len(vow.cmds) {
-		command := vow.runCmd(vow.cmds[runCount], w)
-		r.results = append(r.results, command)
+	for !vow.isCancled() && runCount < len(vow.cmds) {
+		result, err := vow.cmds[runCount].Run(w)
+		if err != nil {
+			// log.Fatal(err)
+			result.failed = true
+		}
+		r.results = append(r.results, result)
 
 		// manually increment the counter so that
 		// in the case the command.failed is true
 		// the loop below that adds an empty cmdResult
 		// to the result doesn't add an extra result
 		runCount++
-		if command.failed {
+		if result.failed {
 			r.Failed = true
 			break
 		}
@@ -58,39 +69,13 @@ func (vow *Vow) Exec(w io.Writer) *Result {
 
 	// add the remaining commands
 	for ; runCount < len(vow.cmds); runCount++ {
-		cmd := vow.cmds[runCount]
+		p := vow.cmds[runCount]
 		command := cmdResult{
-			command: cmd.Path,
-			args:    cmd.Args,
+			command: p.cmd.Path,
+			args:    p.cmd.Args,
 		}
 		r.results = append(r.results, command)
 	}
 
 	return r
-}
-
-func (vow *Vow) runCmd(cmd *exec.Cmd, w io.Writer) (result cmdResult) {
-	var b bytes.Buffer
-	mw := io.MultiWriter(&b, w)
-
-	cmd.Stdout = mw
-	cmd.Stderr = mw
-
-	cmd.Stdout.Write([]byte(strings.Join(cmd.Args, " ") + "\n"))
-	if err := cmd.Start(); err != nil {
-		mw.Write([]byte(err.Error() + "\n"))
-		result.failed = true
-		return
-	}
-
-	if err := cmd.Wait(); err != nil {
-		result.failed = true
-	}
-
-	result.ps = cmd.ProcessState
-	result.output = b.Bytes()
-	result.command = cmd.Path
-	result.args = cmd.Args[1:]
-
-	return
 }

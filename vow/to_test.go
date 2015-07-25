@@ -15,8 +15,8 @@ func TestTo(t *testing.T) {
 	require.NotNil(t, vow)
 
 	assert.Len(t, vow.cmds, 1)
-	assert.Equal(t, cmd, vow.cmds[0].Path)
-	assert.Equal(t, args, vow.cmds[0].Args[1:])
+	assert.Equal(t, cmd, vow.cmds[0].cmd.Path)
+	assert.Equal(t, args, vow.cmds[0].cmd.Args[1:])
 }
 
 func TestThen(t *testing.T) {
