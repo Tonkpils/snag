@@ -9,19 +9,19 @@ import (
 )
 
 type promise struct {
-	cmd    *exec.Cmd
-	closed chan struct{}
+	cmd  *exec.Cmd
+	stop chan struct{}
 }
 
 func newPromise(name string, args ...string) *promise {
 	return &promise{
-		cmd:    exec.Command(name, args...),
-		closed: make(chan struct{}),
+		cmd:  exec.Command(name, args...),
+		stop: make(chan struct{}),
 	}
 }
 
 func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
-	defer close(p.closed)
+	defer close(p.stop)
 
 	cw := newCdmWriter(w)
 	defer cw.Close()
@@ -36,7 +36,7 @@ func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
 	}
 
 	go func() {
-		<-p.closed
+		<-p.stop
 		cw.Close()
 	}()
 
@@ -50,7 +50,7 @@ func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
 	return
 }
 
-func (p *promise) stop() {
+func (p *promise) kill() {
 	if p.cmd.Process != nil {
 		w, ok := p.cmd.Stdout.(io.ReadCloser)
 		if ok {

@@ -135,7 +135,7 @@ func (b *Bob) maybeQueue(path string) {
 func (b *Bob) stopCurVow() {
 	if b.curVow != nil {
 		b.mtx.Lock()
-		b.curVow.Close()
+		b.curVow.Stop()
 		b.mtx.Unlock()
 	}
 }

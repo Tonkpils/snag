@@ -30,10 +30,11 @@ func (vow *Vow) Then(name string, args ...string) *Vow {
 	return vow
 }
 
-func (vow *Vow) Close() {
+// Stop terminates the active command and stops the execution of any future commands
+func (vow *Vow) Stop() {
 	atomic.StoreInt32(vow.cancled, 1)
 	for i := 0; i < len(vow.cmds); i++ {
-		vow.cmds[i].stop()
+		vow.cmds[i].kill()
 	}
 }
 
