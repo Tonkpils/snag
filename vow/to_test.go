@@ -37,7 +37,7 @@ func TestExec(t *testing.T) {
 	vow.Then("echo", "world")
 	result := vow.Exec(&testBuf)
 
-	e := []byte("echo hello\nhello\necho world\nworld\n")
+	e := []byte("snag: echo hello - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: echo world - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nworld\n")
 	assert.Equal(t, e, testBuf.Bytes())
 	assert.False(t, result.Failed)
 	assert.Equal(t, result.executed, 2)
@@ -51,7 +51,7 @@ func TestExecCmdNotFound(t *testing.T) {
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
-	e := []byte("echo hello\nhello\nasdfasdf asdas\nexec: \"asdfasdf\": executable file not found in $PATH\n")
+	e := []byte("snag: echo hello - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: asdfasdf asdas - In Progress\b\b\b\b\b\b\b\b\b\b\bFailed       \nexec: \"asdfasdf\": executable file not found in $PATH\n")
 	assert.Equal(t, e, testBuf.Bytes())
 	assert.True(t, result.Failed)
 	assert.Equal(t, result.executed, 2)
@@ -66,7 +66,7 @@ func TestExecCmdFailed(t *testing.T) {
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
-	e := []byte("echo hello\nhello\n./test.sh\n")
+	e := []byte("snag: echo hello - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: ./test.sh - In Progress\b\b\b\b\b\b\b\b\b\b\bFailed       \n")
 	assert.Equal(t, e, testBuf.Bytes())
 	assert.True(t, result.Failed)
 	assert.Equal(t, result.executed, 2)

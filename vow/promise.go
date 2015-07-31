@@ -1,6 +1,7 @@
 package vow
 
 import (
+	"bytes"
 	"io"
 	"os/exec"
 	"strings"
@@ -23,26 +24,28 @@ func newPromise(name string, args ...string) *promise {
 func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
 	defer close(p.stop)
 
-	cw := newCdmWriter(w)
-	defer cw.Close()
+	var b bytes.Buffer
 
-	p.cmd.Stdout = cw
-	p.cmd.Stderr = cw
+	p.cmd.Stdout = &b
+	p.cmd.Stderr = &b
 
-	w.Write([]byte(strings.Join(p.cmd.Args, " ") + "\n"))
+	// TODO: make the printing prettier
+	w.Write([]byte("snag: " + strings.Join(p.cmd.Args, " ") + " - In Progress"))
 	if err := p.cmd.Start(); err != nil {
+		w.Write([]byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
 		w.Write([]byte(err.Error() + "\n"))
 		return result, err
 	}
 
-	go func() {
-		<-p.stop
-		cw.Close()
-	}()
-
 	if err := p.cmd.Wait(); err != nil {
 		result.failed = true
+		w.Write([]byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
+	} else {
+
+		w.Write([]byte("\b\b\b\b\b\b\b\b\b\b\bPassed       \n"))
 	}
+
+	w.Write(b.Bytes())
 
 	result.ps = p.cmd.ProcessState
 	result.command = p.cmd.Path
