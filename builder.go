@@ -161,11 +161,16 @@ func (b *Bob) watch(path string) bool {
 	if _, ok := b.watching[path]; ok {
 		return false
 	}
-	filepath.Walk(path, func(p string, fileInfo os.FileInfo, err error) error {
-		if fileInfo == nil {
-			return err
+	filepath.Walk(path, func(p string, fi os.FileInfo, err error) error {
+		if fi == nil {
+			return filepath.SkipDir
 		}
-		if fileInfo.IsDir() {
+
+		if fi.IsDir() {
+			if isExcluded(fi.Name()) {
+				return filepath.SkipDir
+			}
+
 			if err := b.w.Add(p); err != nil {
 				return err
 			}
@@ -176,6 +181,10 @@ func (b *Bob) watch(path string) bool {
 		return nil
 	})
 	return shouldBuild
+}
+
+func isExcluded(name string) bool {
+	return name == ".git"
 }
 
 func isCreate(op fsn.Op) bool {
