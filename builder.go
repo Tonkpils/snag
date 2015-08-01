@@ -20,9 +20,8 @@ const (
 )
 
 var (
-	mtimes       = map[string]time.Time{}
-	buildExts    = []string{GoExt, JSONExt}
-	excludedDirs = []string{".git", "_workspace"}
+	mtimes    = map[string]time.Time{}
+	buildExts = []string{GoExt, JSONExt}
 )
 
 type Bob struct {
@@ -32,7 +31,8 @@ type Bob struct {
 	done     chan struct{}
 	watching map[string]struct{}
 
-	cmds [][]string
+	cmds         [][]string
+	excludedDirs []string
 }
 
 func NewBuilder(c config) (*Bob, error) {
@@ -47,10 +47,11 @@ func NewBuilder(c config) (*Bob, error) {
 	}
 
 	return &Bob{
-		w:        w,
-		done:     make(chan struct{}),
-		watching: map[string]struct{}{},
-		cmds:     cmds,
+		w:            w,
+		done:         make(chan struct{}),
+		watching:     map[string]struct{}{},
+		cmds:         cmds,
+		excludedDirs: c.ExcludeDirectory,
 	}, nil
 }
 
@@ -159,7 +160,8 @@ func (b *Bob) watch(path string) bool {
 		}
 
 		if fi.IsDir() {
-			if isExcluded(fi.Name()) {
+			relPath := strings.TrimPrefix(p, path+"/")
+			if b.isExcluded(relPath) {
 				return filepath.SkipDir
 			}
 
@@ -175,8 +177,8 @@ func (b *Bob) watch(path string) bool {
 	return shouldBuild
 }
 
-func isExcluded(name string) bool {
-	for _, n := range excludedDirs {
+func (b *Bob) isExcluded(name string) bool {
+	for _, n := range b.excludedDirs {
 		if n == name {
 			return true
 		}
