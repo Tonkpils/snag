@@ -44,39 +44,11 @@ func (vow *Vow) isCancled() bool {
 
 // Exec runs all of the commands a Vow has with all output redirected
 // to the given writer and returns a Result
-func (vow *Vow) Exec(w io.Writer) *Result {
-	r := new(Result)
-	var runCount int
-	for !vow.isCancled() && runCount < len(vow.cmds) {
-		result, err := vow.cmds[runCount].Run(w)
-		if err != nil {
-			// log.Fatal(err)
-			result.failed = true
-		}
-		r.results = append(r.results, result)
-
-		// manually increment the counter so that
-		// in the case the command.failed is true
-		// the loop below that adds an empty cmdResult
-		// to the result doesn't add an extra result
-		runCount++
-		if result.failed {
-			r.Failed = true
-			break
+func (vow *Vow) Exec(w io.Writer) bool {
+	for i := 0; !vow.isCancled() && i < len(vow.cmds); i++ {
+		if err := vow.cmds[i].Run(w); err != nil {
+			return false
 		}
 	}
-
-	r.executed = runCount
-
-	// add the remaining commands
-	for ; runCount < len(vow.cmds); runCount++ {
-		p := vow.cmds[runCount]
-		command := cmdResult{
-			command: p.cmd.Path,
-			args:    p.cmd.Args,
-		}
-		r.results = append(r.results, command)
-	}
-
-	return r
+	return true
 }

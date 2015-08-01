@@ -39,8 +39,7 @@ func TestExec(t *testing.T) {
 
 	e := []byte("snag: echo hello - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: echo world - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nworld\n")
 	assert.Equal(t, e, testBuf.Bytes())
-	assert.False(t, result.Failed)
-	assert.Equal(t, result.executed, 2)
+	assert.True(t, result)
 }
 
 func TestExecCmdNotFound(t *testing.T) {
@@ -53,9 +52,7 @@ func TestExecCmdNotFound(t *testing.T) {
 
 	e := []byte("snag: echo hello - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: asdfasdf asdas - In Progress\b\b\b\b\b\b\b\b\b\b\bFailed       \nexec: \"asdfasdf\": executable file not found in $PATH\n")
 	assert.Equal(t, e, testBuf.Bytes())
-	assert.True(t, result.Failed)
-	assert.Equal(t, result.executed, 2)
-	assert.Len(t, result.results, 3)
+	assert.False(t, result)
 }
 
 func TestExecCmdFailed(t *testing.T) {
@@ -68,7 +65,5 @@ func TestExecCmdFailed(t *testing.T) {
 
 	e := []byte("snag: echo hello - In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: ./test.sh - In Progress\b\b\b\b\b\b\b\b\b\b\bFailed       \n")
 	assert.Equal(t, e, testBuf.Bytes())
-	assert.True(t, result.Failed)
-	assert.Equal(t, result.executed, 2)
-	assert.Len(t, result.results, 3)
+	assert.False(t, result)
 }

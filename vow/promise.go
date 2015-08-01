@@ -31,7 +31,7 @@ func newPromise(name string, args ...string) *promise {
 	}
 }
 
-func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
+func (p *promise) Run(w io.Writer) (err error) {
 	buf := new(bufCloser)
 	p.cmd.Stdout = buf
 	p.cmd.Stderr = buf
@@ -41,22 +41,18 @@ func (p *promise) Run(w io.Writer) (result cmdResult, err error) {
 	if err := p.cmd.Start(); err != nil {
 		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
 		p.writeIfAlive(w, []byte(err.Error()+"\n"))
-		return result, err
+		return err
 	}
 
-	if err := p.cmd.Wait(); err != nil {
-		result.failed = true
+	err = p.cmd.Wait()
+	if err != nil {
 		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
 	} else {
 		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bPassed       \n"))
 	}
 
 	p.writeIfAlive(w, buf.Bytes())
-
-	result.ps = p.cmd.ProcessState
-	result.command = p.cmd.Path
-	result.args = p.cmd.Args[1:]
-	return
+	return err
 }
 
 func (p *promise) writeIfAlive(w io.Writer, b []byte) {
