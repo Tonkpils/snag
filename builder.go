@@ -12,13 +12,16 @@ import (
 	fsn "gopkg.in/fsnotify.v1"
 )
 
-var (
-	mtimes = map[string]time.Time{}
-)
-
 // supported file extensions
 const (
-	GoExt = ".go"
+	GoExt   = ".go"
+	JSONExt = ".json"
+)
+
+var (
+	mtimes       = map[string]time.Time{}
+	buildExts    = []string{GoExt, JSONExt}
+	excludedDirs = []string{".git", "_workspace"}
 )
 
 // BuildTool represents a program that builds/tests code
@@ -114,7 +117,15 @@ func (b *Bob) Watch(path string) error {
 }
 
 func (b *Bob) maybeQueue(path string) {
-	if filepath.Ext(path) != GoExt {
+	var found bool
+	for _, ext := range buildExts {
+		if filepath.Ext(path) == ext {
+			found = true
+			break
+		}
+	}
+
+	if !found {
 		return
 	}
 
@@ -184,7 +195,12 @@ func (b *Bob) watch(path string) bool {
 }
 
 func isExcluded(name string) bool {
-	return name == ".git"
+	for _, n := range excludedDirs {
+		if n == name {
+			return true
+		}
+	}
+	return false
 }
 
 func isCreate(op fsn.Op) bool {
