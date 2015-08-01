@@ -64,9 +64,12 @@ func (p *promise) writeIfAlive(w io.Writer, b []byte) {
 func (p *promise) kill() {
 	atomic.StoreInt32(p.killed, 1)
 	if p.cmd.Process != nil {
-		p.cmd.Process.Signal(syscall.SIGTERM)
+		if p.cmd.ProcessState != nil && !p.cmd.ProcessState.Exited() {
+			p.cmd.Process.Signal(syscall.SIGTERM)
+		}
 
-		for ; p.cmd.ProcessState != nil && !p.cmd.ProcessState.Exited(); <-time.After(100 * time.Millisecond) {
+		for ; p.cmd.ProcessState != nil &&
+			!p.cmd.ProcessState.Exited(); <-time.After(100 * time.Millisecond) {
 		}
 	}
 }
