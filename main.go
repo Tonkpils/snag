@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -9,10 +10,10 @@ import (
 
 var (
 	buildTool string
-	buildArgs string
-	vetArgs   string
-	testArgs  string
 	packages  string
+	buildArgs args
+	vetArgs   args
+	testArgs  args
 )
 
 const (
@@ -23,12 +24,28 @@ const (
 	packageDesc   = "comma delimited list of packages to run commands on"
 )
 
+type args []string
+
+func (a *args) String() string {
+	return fmt.Sprint(*a)
+}
+
+func (a *args) Set(value string) error {
+	if value != "" {
+		for _, v := range strings.Split(value, ",") {
+			*a = append(*a, v)
+		}
+	}
+
+	return nil
+}
+
 func init() {
 	flag.StringVar(&packages, "packages", "./...", packageDesc)
 	flag.StringVar(&buildTool, "build-tool", "go", buildToolDesc)
-	flag.StringVar(&buildArgs, "build", "", buildDesc)
-	flag.StringVar(&vetArgs, "vet", "", vetDesc)
-	flag.StringVar(&testArgs, "test", "", testDesc)
+	flag.Var(&buildArgs, "build", buildDesc)
+	flag.Var(&vetArgs, "vet", vetDesc)
+	flag.Var(&testArgs, "test", testDesc)
 }
 
 func main() {
@@ -36,9 +53,9 @@ func main() {
 
 	b, err := NewBuilder(
 		strings.Split(packages, ","),
-		strings.Split(buildArgs, ","),
-		strings.Split(vetArgs, ","),
-		strings.Split(testArgs, ","),
+		buildArgs,
+		vetArgs,
+		testArgs,
 	)
 	if err != nil {
 		log.Fatal(err)
