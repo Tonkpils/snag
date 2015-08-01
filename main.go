@@ -1,75 +1,37 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
-var (
-	buildTool string
-	packages  string
-	buildArgs args
-	vetArgs   args
-	testArgs  args
-)
-
-const (
-	buildToolDesc = "build tool used to run commands. (Godeps, GB and Go are the only ones currently supported)"
-	buildDesc     = "comma delimited list of arguments given to the build command"
-	vetDesc       = "comma delimited list of arguments given to the vet command"
-	testDesc      = "comma delimited list of arguments given to the test command"
-	packageDesc   = "comma delimited list of packages to run commands on"
-)
-
-type args []string
-
-func (a *args) String() string {
-	return fmt.Sprint(*a)
-}
-
-func (a *args) Set(value string) error {
-	if value != "" {
-		for _, v := range strings.Split(value, ",") {
-			*a = append(*a, v)
-		}
-	}
-
-	return nil
-}
-
-func init() {
-	flag.StringVar(&packages, "packages", "./...", packageDesc)
-	flag.StringVar(&buildTool, "build-tool", "go", buildToolDesc)
-	flag.Var(&buildArgs, "build", buildDesc)
-	flag.Var(&vetArgs, "vet", vetDesc)
-	flag.Var(&testArgs, "test", testDesc)
+type config struct {
+	Script []string `yaml:"script"`
 }
 
 func main() {
-	flag.Parse()
+	in, err := ioutil.ReadFile(".snag.yml")
+	if err != nil {
+		log.Fatal("Could not find '.snag.yml' in your current directory")
+	}
 
-	b, err := NewBuilder(
-		strings.Split(packages, ","),
-		buildArgs,
-		vetArgs,
-		testArgs,
-	)
+	var c config
+	if err := yaml.Unmarshal(in, &c); err != nil {
+		log.Fatalf("Could not parse yml file. %s\n", err)
+	}
+
+	if len(c.Script) == 0 {
+		log.Fatal("You must have at least 1 command in your '.snag.yml'")
+	}
+
+	b, err := NewBuilder(c)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer b.Close()
-
-	switch strings.ToLower(buildTool) {
-	case "godep":
-		b.BuildWith(BuildToolGodep)
-	case "gb":
-		b.BuildWith(BuildToolGB)
-	default:
-		b.BuildWith(BuildToolGo)
-	}
 
 	wd, err := os.Getwd()
 	if err != nil {

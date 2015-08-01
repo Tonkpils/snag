@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,16 +25,6 @@ var (
 	excludedDirs = []string{".git", "_workspace"}
 )
 
-// BuildTool represents a program that builds/tests code
-type BuildTool string
-
-// supported build tools
-const (
-	BuildToolGo    = "go"
-	BuildToolGodep = "godep"
-	BuildToolGB    = "gb"
-)
-
 type Bob struct {
 	w        *fsn.Watcher
 	mtx      sync.RWMutex
@@ -41,43 +32,26 @@ type Bob struct {
 	done     chan struct{}
 	watching map[string]struct{}
 
-	buildTool string
-	buildArgs []string
-	vetArgs   []string
-	testArgs  []string
+	cmds [][]string
 }
 
-func NewBuilder(packages, build, vet, test []string) (*Bob, error) {
+func NewBuilder(c config) (*Bob, error) {
 	w, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
-	b := append([]string{"build"}, build...)
-	b = append(b, packages...)
-
-	v := append([]string{"vet"}, vet...)
-	v = append(v, packages...)
-
-	t := append([]string{"test"}, test...)
-	t = append(t, packages...)
+	var cmds [][]string
+	for _, s := range c.Script {
+		cmds = append(cmds, strings.Split(s, " "))
+	}
 
 	return &Bob{
-		w:         w,
-		done:      make(chan struct{}),
-		watching:  map[string]struct{}{},
-		buildArgs: b,
-		vetArgs:   v,
-		testArgs:  t,
+		w:        w,
+		done:     make(chan struct{}),
+		watching: map[string]struct{}{},
+		cmds:     cmds,
 	}, nil
-}
-
-func (b *Bob) BuildWith(bt BuildTool) {
-	b.buildTool = string(bt)
-	if b.buildTool == BuildToolGodep {
-		b.buildArgs = append([]string{"go"}, b.buildArgs...)
-		b.testArgs = append([]string{"go"}, b.testArgs...)
-	}
 }
 
 func (b *Bob) Close() {
@@ -156,9 +130,16 @@ func (b *Bob) execute() {
 
 	b.clearBuffer()
 	b.mtx.Lock()
-	b.curVow = vow.To(b.buildTool, b.buildArgs...).
-		Then("go", b.vetArgs...).
-		Then(b.buildTool, b.testArgs...)
+
+	// setup the first command
+	firstCmd := b.cmds[0]
+	b.curVow = vow.To(firstCmd[0], firstCmd[1:]...)
+
+	// setup the remaining commands
+	for i := 1; i < len(b.cmds); i++ {
+		cmd := b.cmds[i]
+		b.curVow = b.curVow.Then(cmd[0], cmd[1:]...)
+	}
 	go b.curVow.Exec(os.Stdout)
 	b.mtx.Unlock()
 }

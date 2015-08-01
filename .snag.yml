@@ -1,0 +1,6 @@
+
+script:
+  - go build
+  - go vet
+  - gofmt -l -s .
+  - go test ./... -v -race
