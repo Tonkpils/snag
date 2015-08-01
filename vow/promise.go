@@ -37,7 +37,7 @@ func (p *promise) Run(w io.Writer) (err error) {
 	p.cmd.Stderr = buf
 
 	// TODO: make the printing prettier
-	w.Write([]byte("snag: " + strings.Join(p.cmd.Args, " ") + " - In Progress"))
+	w.Write([]byte("snag: " + strings.Join(p.cmd.Args, " ") + "\t|> In Progress"))
 	if err := p.cmd.Start(); err != nil {
 		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
 		p.writeIfAlive(w, []byte(err.Error()+"\n"))
