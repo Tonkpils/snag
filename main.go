@@ -9,7 +9,8 @@ import (
 )
 
 type config struct {
-	Script []string `yaml:"script"`
+	Script           []string `yaml:"script"`
+	ExcludeDirectory []string `yaml:"exclude_directory"`
 }
 
 func main() {
