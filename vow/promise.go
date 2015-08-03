@@ -2,12 +2,19 @@ package vow
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os/exec"
 	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
+)
+
+var (
+	statusFailed     = fmt.Sprintf("\r|%s     |\n", red("Failed"))
+	statusPassed     = fmt.Sprintf("\r|%s     |\n", green("Passed"))
+	statusInProgress = fmt.Sprintf("|%s|", yellow("In Progress"))
 )
 
 type bufCloser struct {
@@ -36,19 +43,19 @@ func (p *promise) Run(w io.Writer) (err error) {
 	p.cmd.Stdout = buf
 	p.cmd.Stderr = buf
 
-	// TODO: make the printing prettier
-	w.Write([]byte("snag: " + strings.Join(p.cmd.Args, " ") + "\t|> In Progress"))
+	out := fmt.Sprintf("%s snag: %s", statusInProgress, strings.Join(p.cmd.Args, " "))
+	w.Write([]byte(out))
 	if err := p.cmd.Start(); err != nil {
-		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
+		p.writeIfAlive(w, []byte(statusFailed))
 		p.writeIfAlive(w, []byte(err.Error()+"\n"))
 		return err
 	}
 
 	err = p.cmd.Wait()
 	if err != nil {
-		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bFailed       \n"))
+		p.writeIfAlive(w, []byte(statusFailed))
 	} else {
-		p.writeIfAlive(w, []byte("\b\b\b\b\b\b\b\b\b\b\bPassed       \n"))
+		p.writeIfAlive(w, []byte(statusPassed))
 	}
 
 	p.writeIfAlive(w, buf.Bytes())
