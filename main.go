@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	verbose   bool
 	buildTool string
 	packages  string
 	buildArgs args
@@ -41,6 +42,7 @@ func (a *args) Set(value string) error {
 }
 
 func init() {
+	flag.BoolVar(&verbose, "verbose", false, "print command outputs on success")
 	flag.StringVar(&packages, "packages", "./...", packageDesc)
 	flag.StringVar(&buildTool, "build-tool", "go", buildToolDesc)
 	flag.Var(&buildArgs, "build", buildDesc)
@@ -56,6 +58,7 @@ func main() {
 		buildArgs,
 		vetArgs,
 		testArgs,
+		verbose,
 	)
 	if err != nil {
 		log.Fatal(err)

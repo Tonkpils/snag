@@ -46,9 +46,11 @@ type Bob struct {
 	buildArgs []string
 	vetArgs   []string
 	testArgs  []string
+
+	verbose bool
 }
 
-func NewBuilder(packages, build, vet, test []string) (*Bob, error) {
+func NewBuilder(packages, build, vet, test []string, verbose bool) (*Bob, error) {
 	w, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -70,6 +72,7 @@ func NewBuilder(packages, build, vet, test []string) (*Bob, error) {
 		buildArgs: b,
 		vetArgs:   v,
 		testArgs:  t,
+		verbose:   verbose,
 	}, nil
 }
 
@@ -160,6 +163,7 @@ func (b *Bob) execute() {
 	b.curVow = vow.To(b.buildTool, b.buildArgs...).
 		Then("go", b.vetArgs...).
 		Then(b.buildTool, b.testArgs...)
+	b.curVow.Verbose = b.verbose
 	go b.curVow.Exec(ansicolor.NewAnsiColorWriter(os.Stdout))
 	b.mtx.Unlock()
 }

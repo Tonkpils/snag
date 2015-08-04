@@ -39,7 +39,7 @@ func TestExec(t *testing.T) {
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s echo hello%shello\n%s echo world%sworld\n",
+		"%s echo hello%s%s echo world%s",
 		statusInProgress,
 		statusPassed,
 		statusInProgress,
@@ -58,7 +58,7 @@ func TestExecCmdNotFound(t *testing.T) {
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s echo hello%shello\n%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in $PATH\n",
+		"%s echo hello%s%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in $PATH\n",
 		statusInProgress,
 		statusPassed,
 		statusInProgress,
@@ -77,7 +77,7 @@ func TestExecCmdFailed(t *testing.T) {
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s echo hello%shello\n%s ./test.sh%s",
+		"%s echo hello%s%s ./test.sh%s",
 		statusInProgress,
 		statusPassed,
 		statusInProgress,
@@ -86,4 +86,20 @@ func TestExecCmdFailed(t *testing.T) {
 
 	assert.Equal(t, e, testBuf.String())
 	assert.False(t, result)
+}
+
+func TestVowVerbose(t *testing.T) {
+	var testBuf bytes.Buffer
+
+	vow := To("echo", "hello")
+	vow.Verbose = true
+	result := vow.Exec(&testBuf)
+	e := fmt.Sprintf(
+		"%s echo hello%shello\n",
+		statusInProgress,
+		statusPassed,
+	)
+
+	assert.Equal(t, e, testBuf.String())
+	assert.True(t, result)
 }
