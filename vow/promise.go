@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	statusFailed     = fmt.Sprintf("\r|%s     |\n", red("Failed"))
-	statusPassed     = fmt.Sprintf("\r|%s     |\n", green("Passed"))
-	statusInProgress = fmt.Sprintf("|%s|", yellow("In Progress"))
+	statusFailed     = "\r|" + red("Failed") + "     |\n"
+	statusPassed     = "\r|" + green("Passed") + "     |\n"
+	statusInProgress = "|" + yellow("In Progress") + "|"
 )
 
 type bufCloser struct {
@@ -43,8 +43,12 @@ func (p *promise) Run(w io.Writer) (err error) {
 	p.cmd.Stdout = buf
 	p.cmd.Stderr = buf
 
-	out := fmt.Sprintf("%s snag: %s", statusInProgress, strings.Join(p.cmd.Args, " "))
-	w.Write([]byte(out))
+	fmt.Fprintf(
+		w,
+		"%s snag: %s",
+		statusInProgress,
+		strings.Join(p.cmd.Args, " "),
+	)
 	if err := p.cmd.Start(); err != nil {
 		p.writeIfAlive(w, []byte(statusFailed))
 		p.writeIfAlive(w, []byte(err.Error()+"\n"))

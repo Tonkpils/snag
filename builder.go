@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Tonkpils/snag/vow"
+	"github.com/shiena/ansicolor"
 	fsn "gopkg.in/fsnotify.v1"
 )
 
@@ -159,7 +160,7 @@ func (b *Bob) execute() {
 	b.curVow = vow.To(b.buildTool, b.buildArgs...).
 		Then("go", b.vetArgs...).
 		Then(b.buildTool, b.testArgs...)
-	go b.curVow.Exec(os.Stdout)
+	go b.curVow.Exec(ansicolor.NewAnsiColorWriter(os.Stdout))
 	b.mtx.Unlock()
 }
 

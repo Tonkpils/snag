@@ -37,7 +37,7 @@ func TestExec(t *testing.T) {
 	vow.Then("echo", "world")
 	result := vow.Exec(&testBuf)
 
-	e := "|\x1b[1;33mIn Progress\x1b[0m| snag: echo hello\r|\x1b[0;32mPassed\x1b[0m     |\nhello\n|\x1b[1;33mIn Progress\x1b[0m| snag: echo world\r|\x1b[0;32mPassed\x1b[0m     |\nworld\n"
+	e := "|\x1b[33mIn Progress\x1b[0m| snag: echo hello\r|\x1b[32mPassed\x1b[0m     |\nhello\n|\x1b[33mIn Progress\x1b[0m| snag: echo world\r|\x1b[32mPassed\x1b[0m     |\nworld\n"
 	assert.Equal(t, e, testBuf.String())
 	assert.True(t, result)
 }
@@ -50,7 +50,7 @@ func TestExecCmdNotFound(t *testing.T) {
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
-	e := "|\x1b[1;33mIn Progress\x1b[0m| snag: echo hello\r|\x1b[0;32mPassed\x1b[0m     |\nhello\n|\x1b[1;33mIn Progress\x1b[0m| snag: asdfasdf asdas\r|\x1b[0;31mFailed\x1b[0m     |\nexec: \"asdfasdf\": executable file not found in $PATH\n"
+	e := "|\x1b[33mIn Progress\x1b[0m| snag: echo hello\r|\x1b[32mPassed\x1b[0m     |\nhello\n|\x1b[33mIn Progress\x1b[0m| snag: asdfasdf asdas\r|\x1b[31mFailed\x1b[0m     |\nexec: \"asdfasdf\": executable file not found in $PATH\n"
 	assert.Equal(t, e, testBuf.String())
 	assert.False(t, result)
 }
@@ -63,7 +63,7 @@ func TestExecCmdFailed(t *testing.T) {
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
-	e := "|\x1b[1;33mIn Progress\x1b[0m| snag: echo hello\r|\x1b[0;32mPassed\x1b[0m     |\nhello\n|\x1b[1;33mIn Progress\x1b[0m| snag: ./test.sh\r|\x1b[0;31mFailed\x1b[0m     |\n"
+	e := "|\x1b[33mIn Progress\x1b[0m| snag: echo hello\r|\x1b[32mPassed\x1b[0m     |\nhello\n|\x1b[33mIn Progress\x1b[0m| snag: ./test.sh\r|\x1b[31mFailed\x1b[0m     |\n"
 	assert.Equal(t, e, testBuf.String())
 	assert.False(t, result)
 }
