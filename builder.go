@@ -15,6 +15,9 @@ import (
 )
 
 var mtimes = map[string]time.Time{}
+var clearBuffer = func() {
+	fmt.Print("\033c")
+}
 
 type Bob struct {
 	w        *fsn.Watcher
@@ -119,7 +122,7 @@ func (b *Bob) stopCurVow() {
 func (b *Bob) execute() {
 	b.stopCurVow()
 
-	b.clearBuffer()
+	clearBuffer()
 	b.mtx.Lock()
 
 	// setup the first command
@@ -137,9 +140,9 @@ func (b *Bob) execute() {
 	b.mtx.Unlock()
 }
 
-func (b *Bob) clearBuffer() {
-	fmt.Print("\033c")
-}
+// func (b *Bob) clearBuffer() {
+// 	fmt.Print("\033c")
+// }
 
 func (b *Bob) watch(path string) bool {
 	var shouldBuild bool
