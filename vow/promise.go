@@ -17,15 +17,6 @@ var (
 	statusInProgress = "|" + yellow("In Progress") + "|"
 )
 
-type bufCloser struct {
-	bytes.Buffer
-}
-
-func (bc *bufCloser) Close() error {
-	bc.Reset()
-	return nil
-}
-
 type promise struct {
 	cmd    *exec.Cmd
 	killed *int32
@@ -39,9 +30,9 @@ func newPromise(name string, args ...string) *promise {
 }
 
 func (p *promise) Run(w io.Writer) (err error) {
-	buf := new(bufCloser)
-	p.cmd.Stdout = buf
-	p.cmd.Stderr = buf
+	var buf bytes.Buffer
+	p.cmd.Stdout = &buf
+	p.cmd.Stderr = &buf
 
 	fmt.Fprintf(
 		w,
