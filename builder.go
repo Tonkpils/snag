@@ -14,16 +14,7 @@ import (
 	fsn "gopkg.in/fsnotify.v1"
 )
 
-// supported file extensions
-const (
-	GoExt   = ".go"
-	JSONExt = ".json"
-)
-
-var (
-	mtimes    = map[string]time.Time{}
-	buildExts = []string{GoExt, JSONExt}
-)
+var mtimes = map[string]time.Time{}
 
 type Bob struct {
 	w        *fsn.Watcher
@@ -31,9 +22,10 @@ type Bob struct {
 	curVow   *vow.Vow
 	done     chan struct{}
 	watching map[string]struct{}
+	watchDir string
 
 	cmds         [][]string
-	excludedDirs []string
+	ignoredItems []string
 
 	verbose bool
 }
@@ -54,7 +46,7 @@ func NewBuilder(c config) (*Bob, error) {
 		done:         make(chan struct{}),
 		watching:     map[string]struct{}{},
 		cmds:         cmds,
-		excludedDirs: c.ExcludeDirectory,
+		ignoredItems: c.IgnoredItems,
 		verbose:      c.Verbose,
 	}, nil
 }
@@ -65,6 +57,7 @@ func (b *Bob) Close() {
 }
 
 func (b *Bob) Watch(path string) error {
+	b.watchDir = path
 	b.watch(path)
 	b.execute()
 
@@ -96,15 +89,8 @@ func (b *Bob) Watch(path string) error {
 }
 
 func (b *Bob) maybeQueue(path string) {
-	var found bool
-	for _, ext := range buildExts {
-		if filepath.Ext(path) == ext {
-			found = true
-			break
-		}
-	}
-
-	if !found {
+	relPath := strings.TrimPrefix(path, b.watchDir+"/")
+	if b.isExcluded(relPath) {
 		return
 	}
 
@@ -184,7 +170,7 @@ func (b *Bob) watch(path string) bool {
 }
 
 func (b *Bob) isExcluded(name string) bool {
-	for _, n := range b.excludedDirs {
+	for _, n := range b.ignoredItems {
 		if n == name {
 			return true
 		}

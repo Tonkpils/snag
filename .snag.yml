@@ -1,7 +1,8 @@
 verbose: true
 
-exclude_directory:
+ignore:
   - .git
+  - snag
 
 script:
   - go build
