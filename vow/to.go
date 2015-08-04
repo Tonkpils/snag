@@ -13,7 +13,8 @@ import (
 type Vow struct {
 	canceled *int32
 
-	cmds []*promise
+	cmds    []*promise
+	Verbose bool
 }
 
 // To returns a new Vow that is configured to execute command given.
@@ -46,7 +47,7 @@ func (vow *Vow) isCanceled() bool {
 // to the given writer and returns a Result
 func (vow *Vow) Exec(w io.Writer) bool {
 	for i := 0; !vow.isCanceled() && i < len(vow.cmds); i++ {
-		if err := vow.cmds[i].Run(w); err != nil {
+		if err := vow.cmds[i].Run(w, vow.Verbose); err != nil {
 			return false
 		}
 	}

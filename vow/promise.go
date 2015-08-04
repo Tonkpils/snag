@@ -29,7 +29,7 @@ func newPromise(name string, args ...string) *promise {
 	}
 }
 
-func (p *promise) Run(w io.Writer) (err error) {
+func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 	var buf bytes.Buffer
 	p.cmd.Stdout = &buf
 	p.cmd.Stderr = &buf
@@ -53,7 +53,9 @@ func (p *promise) Run(w io.Writer) (err error) {
 		p.writeIfAlive(w, []byte(statusPassed))
 	}
 
-	p.writeIfAlive(w, buf.Bytes())
+	if verbose || err != nil {
+		p.writeIfAlive(w, buf.Bytes())
+	}
 	return err
 }
 

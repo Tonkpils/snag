@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewBuilder(t *testing.T) {
-	b, err := NewBuilder(nil, nil, nil, nil)
+	b, err := NewBuilder(nil, nil, nil, nil, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, b)
 }
