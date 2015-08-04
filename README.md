@@ -1,5 +1,9 @@
 # Snag [![Build Status](https://travis-ci.org/Tonkpils/snag.svg?branch=wip)](https://travis-ci.org/Tonkpils/snag) [![Coverage Status](https://coveralls.io/repos/Tonkpils/snag/badge.svg?branch=coverage&service=github)](https://coveralls.io/github/Tonkpils/snag?branch=coverage)
 
+An automatic build tool for all your needs
+
+![](http://i.imgur.com/epcicvr.gif)
+
 ## Installation
 
 If you have [go](http://golang.org/) installed and want to install
@@ -40,6 +44,3 @@ Usage of snag:
   -vet=[]: comma delimited list of arguments given to the vet command
 ```
 
----
-
-![](http://i.imgur.com/Vh7daqm.gif)
