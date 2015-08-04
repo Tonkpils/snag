@@ -39,7 +39,7 @@ func TestExec(t *testing.T) {
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s snag: echo hello%shello\n%s snag: echo world%sworld\n",
+		"%s echo hello%shello\n%s echo world%sworld\n",
 		statusInProgress,
 		statusPassed,
 		statusInProgress,
@@ -58,7 +58,7 @@ func TestExecCmdNotFound(t *testing.T) {
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s snag: echo hello%shello\n%s snag: asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in $PATH\n",
+		"%s echo hello%shello\n%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in $PATH\n",
 		statusInProgress,
 		statusPassed,
 		statusInProgress,
@@ -77,7 +77,7 @@ func TestExecCmdFailed(t *testing.T) {
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s snag: echo hello%shello\n%s snag: ./test.sh%s",
+		"%s echo hello%shello\n%s ./test.sh%s",
 		statusInProgress,
 		statusPassed,
 		statusInProgress,

@@ -36,7 +36,7 @@ func (p *promise) Run(w io.Writer) (err error) {
 
 	fmt.Fprintf(
 		w,
-		"%s snag: %s",
+		"%s %s",
 		statusInProgress,
 		strings.Join(p.cmd.Args, " "),
 	)
