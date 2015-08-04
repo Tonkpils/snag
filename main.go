@@ -11,6 +11,7 @@ import (
 type config struct {
 	Script           []string `yaml:"script"`
 	ExcludeDirectory []string `yaml:"exclude_directory"`
+	Verbose          bool     `yaml:"verbose"`
 }
 
 func main() {

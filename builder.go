@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Tonkpils/snag/vow"
+	"github.com/shiena/ansicolor"
 	fsn "gopkg.in/fsnotify.v1"
 )
 
@@ -33,6 +34,8 @@ type Bob struct {
 
 	cmds         [][]string
 	excludedDirs []string
+
+	verbose bool
 }
 
 func NewBuilder(c config) (*Bob, error) {
@@ -52,6 +55,7 @@ func NewBuilder(c config) (*Bob, error) {
 		watching:     map[string]struct{}{},
 		cmds:         cmds,
 		excludedDirs: c.ExcludeDirectory,
+		verbose:      c.Verbose,
 	}, nil
 }
 
@@ -141,7 +145,9 @@ func (b *Bob) execute() {
 		cmd := b.cmds[i]
 		b.curVow = b.curVow.Then(cmd[0], cmd[1:]...)
 	}
-	go b.curVow.Exec(os.Stdout)
+	b.curVow.Verbose = b.verbose
+	go b.curVow.Exec(ansicolor.NewAnsiColorWriter(os.Stdout))
+
 	b.mtx.Unlock()
 }
 

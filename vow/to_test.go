@@ -2,6 +2,7 @@ package vow
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,8 +38,14 @@ func TestExec(t *testing.T) {
 	vow.Then("echo", "world")
 	result := vow.Exec(&testBuf)
 
-	e := []byte("snag: echo hello\t|> In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: echo world\t|> In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nworld\n")
-	assert.Equal(t, e, testBuf.Bytes())
+	e := fmt.Sprintf(
+		"%s echo hello%s%s echo world%s",
+		statusInProgress,
+		statusPassed,
+		statusInProgress,
+		statusPassed,
+	)
+	assert.Equal(t, e, testBuf.String())
 	assert.True(t, result)
 }
 
@@ -50,8 +57,14 @@ func TestExecCmdNotFound(t *testing.T) {
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
-	e := []byte("snag: echo hello\t|> In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: asdfasdf asdas\t|> In Progress\b\b\b\b\b\b\b\b\b\b\bFailed       \nexec: \"asdfasdf\": executable file not found in $PATH\n")
-	assert.Equal(t, e, testBuf.Bytes())
+	e := fmt.Sprintf(
+		"%s echo hello%s%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in $PATH\n",
+		statusInProgress,
+		statusPassed,
+		statusInProgress,
+		statusFailed,
+	)
+	assert.Equal(t, e, testBuf.String())
 	assert.False(t, result)
 }
 
@@ -63,7 +76,30 @@ func TestExecCmdFailed(t *testing.T) {
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
-	e := []byte("snag: echo hello\t|> In Progress\b\b\b\b\b\b\b\b\b\b\bPassed       \nhello\nsnag: ./test.sh\t|> In Progress\b\b\b\b\b\b\b\b\b\b\bFailed       \n")
-	assert.Equal(t, e, testBuf.Bytes())
+	e := fmt.Sprintf(
+		"%s echo hello%s%s ./test.sh%s",
+		statusInProgress,
+		statusPassed,
+		statusInProgress,
+		statusFailed,
+	)
+
+	assert.Equal(t, e, testBuf.String())
 	assert.False(t, result)
+}
+
+func TestVowVerbose(t *testing.T) {
+	var testBuf bytes.Buffer
+
+	vow := To("echo", "hello")
+	vow.Verbose = true
+	result := vow.Exec(&testBuf)
+	e := fmt.Sprintf(
+		"%s echo hello%shello\n",
+		statusInProgress,
+		statusPassed,
+	)
+
+	assert.Equal(t, e, testBuf.String())
+	assert.True(t, result)
 }

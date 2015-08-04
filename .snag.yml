@@ -1,3 +1,5 @@
+verbose: true
+
 exclude_directory:
   - .git
 
