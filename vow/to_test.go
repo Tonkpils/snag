@@ -3,10 +3,16 @@ package vow
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	echoScript = "./echo.sh"
+	failScript = "./fail.sh"
 )
 
 func TestTo(t *testing.T) {
@@ -34,15 +40,17 @@ func TestThen(t *testing.T) {
 func TestExec(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To("echo", "hello")
-	vow.Then("echo", "world")
+	vow := To(echoScript)
+	vow.Then(echoScript)
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s echo hello%s%s echo world%s",
+		"%s %s%s%s %s%s",
 		statusInProgress,
+		echoScript,
 		statusPassed,
 		statusInProgress,
+		echoScript,
 		statusPassed,
 	)
 	assert.Equal(t, e, testBuf.String())
@@ -52,35 +60,39 @@ func TestExec(t *testing.T) {
 func TestExecCmdNotFound(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To("echo", "hello")
+	vow := To(echoScript)
 	vow.Then("asdfasdf", "asdas")
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s echo hello%s%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in $PATH\n",
+		"%s %s%s%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in ",
 		statusInProgress,
+		echoScript,
 		statusPassed,
 		statusInProgress,
 		statusFailed,
 	)
-	assert.Equal(t, e, testBuf.String())
+
+	assert.True(t, strings.HasPrefix(testBuf.String(), e))
 	assert.False(t, result)
 }
 
 func TestExecCmdFailed(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To("echo", "hello")
-	vow.Then("./test.sh")
+	vow := To(echoScript)
+	vow.Then(failScript)
 	vow.Then("Shoud", "never", "happen")
 	result := vow.Exec(&testBuf)
 
 	e := fmt.Sprintf(
-		"%s echo hello%s%s ./test.sh%s",
+		"%s %s%s%s %s%s",
 		statusInProgress,
+		echoScript,
 		statusPassed,
 		statusInProgress,
+		failScript,
 		statusFailed,
 	)
 
@@ -91,12 +103,13 @@ func TestExecCmdFailed(t *testing.T) {
 func TestVowVerbose(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To("echo", "hello")
+	vow := To(echoScript)
 	vow.Verbose = true
 	result := vow.Exec(&testBuf)
 	e := fmt.Sprintf(
-		"%s echo hello%shello\n",
+		"%s %s%shello\r\n",
 		statusInProgress,
+		echoScript,
 		statusPassed,
 	)
 
