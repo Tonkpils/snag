@@ -15,6 +15,9 @@ import (
 )
 
 var mtimes = map[string]time.Time{}
+var clearBuffer = func() {
+	fmt.Print("\033c")
+}
 
 type Bob struct {
 	w        *fsn.Watcher
@@ -89,8 +92,7 @@ func (b *Bob) Watch(path string) error {
 }
 
 func (b *Bob) maybeQueue(path string) {
-	relPath := strings.TrimPrefix(path, b.watchDir+"/")
-	if b.isExcluded(relPath) {
+	if b.isExcluded(path) {
 		return
 	}
 
@@ -119,7 +121,7 @@ func (b *Bob) stopCurVow() {
 func (b *Bob) execute() {
 	b.stopCurVow()
 
-	b.clearBuffer()
+	clearBuffer()
 	b.mtx.Lock()
 
 	// setup the first command
@@ -137,10 +139,6 @@ func (b *Bob) execute() {
 	b.mtx.Unlock()
 }
 
-func (b *Bob) clearBuffer() {
-	fmt.Print("\033c")
-}
-
 func (b *Bob) watch(path string) bool {
 	var shouldBuild bool
 	if _, ok := b.watching[path]; ok {
@@ -152,8 +150,7 @@ func (b *Bob) watch(path string) bool {
 		}
 
 		if fi.IsDir() {
-			relPath := strings.TrimPrefix(p, path+"/")
-			if b.isExcluded(relPath) {
+			if b.isExcluded(p) {
 				return filepath.SkipDir
 			}
 
@@ -169,9 +166,12 @@ func (b *Bob) watch(path string) bool {
 	return shouldBuild
 }
 
-func (b *Bob) isExcluded(name string) bool {
-	for _, n := range b.ignoredItems {
-		if n == name {
+func (b *Bob) isExcluded(path string) bool {
+	// get the relative path
+	path = strings.TrimPrefix(path, b.watchDir+string(filepath.Separator))
+
+	for _, p := range b.ignoredItems {
+		if p == path {
 			return true
 		}
 	}

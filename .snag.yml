@@ -3,6 +3,7 @@ verbose: true
 ignore:
   - .git
   - snag
+  - snag.exe
 
 script:
   - go build
