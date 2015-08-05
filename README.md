@@ -19,28 +19,28 @@ download the binary for your platform.
 
 ## Usage
 
-### Running
+Snag works by reading a `.snag.yml` file which contains a set of
+commands, ignored directories, and options.
 
-Using snag is as easy and changing into your go projects directory
-and running `snag`. Be default it will run the following commands
+As an example, the file with these contents:
 
-```bash
-go build ./...
-go vet ./...
-go test ./...
+```yml
+script:
+  - echo "hello world"
+  - go test
+ignore:
+  - .git
+verbose: true
 ```
 
-### Using Arguments
+will make snag run the commands `echo "hello world"` and `go test`,
+ignoring changes in the `.git` directory, and returning output on success
+through the `verbose` option.
 
-You can pass arguments to snag to specify what packages to run against and
-what flags to pass to the individual commands.
+Simply run:
 
-```bash
-Usage of snag:
-  -build=[]: comma delimited list of arguments given to the build command
-  -build-tool="go": build tool used to run commands. (Godeps, GB and Go are the only ones currently supported)
-  -packages="./...": comma delimited list of packages to run commands on
-  -test=[]: comma delimited list of arguments given to the test command
-  -vet=[]: comma delimited list of arguments given to the vet command
+```
+snag
 ```
 
+From a project with a `.snag.yml` file and develop away!
