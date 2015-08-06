@@ -39,9 +39,9 @@ func NewBuilder(c config) (*Bob, error) {
 		return nil, err
 	}
 
-	var cmds [][]string
-	for _, s := range c.Script {
-		cmds = append(cmds, strings.Split(s, " "))
+	cmds := make([][]string, len(c.Script))
+	for i, s := range c.Script {
+		cmds[i] = strings.Split(s, " ")
 	}
 
 	return &Bob{
