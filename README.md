@@ -45,7 +45,16 @@ snag
 
 From a project with a `.snag.yml` file and develop away!
 
-## Troubleshooting
+## Caveats 
+
+* Endless build loops
+
+Snag will run your configured scripts if **ANY** file modifed in your current directory.
+If you scripts generate any files, you should add them to the `ignore` section in your
+`.snag.yml` to avoid an endless build loop.
+
+
+## Known Issues
 
 * `open /dev/null: too many open files`
 
