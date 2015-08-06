@@ -17,7 +17,8 @@ func TestClose(t *testing.T) {
 	b, err := NewBuilder(config{})
 	require.NoError(t, err)
 
-	b.Close()
+	err = b.Close()
+	assert.NoError(t, err)
 
 	_, ok := <-b.done
 	assert.False(t, ok, "channel 'done' was not closed")

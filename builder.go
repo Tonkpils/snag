@@ -54,9 +54,9 @@ func NewBuilder(c config) (*Bob, error) {
 	}, nil
 }
 
-func (b *Bob) Close() {
-	b.w.Close()
+func (b *Bob) Close() error {
 	close(b.done)
+	return b.w.Close()
 }
 
 func (b *Bob) Watch(path string) error {
