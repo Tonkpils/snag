@@ -3,8 +3,10 @@ package vow
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,6 +37,27 @@ func TestThen(t *testing.T) {
 	vow.Then("foo").Then("another")
 
 	assert.Len(t, vow.cmds, totalCmds+2)
+}
+
+func TestStop(t *testing.T) {
+	vow := To(echoScript)
+	for i := 0; i < 50; i++ {
+		vow = vow.Then(echoScript)
+	}
+
+	result := make(chan bool)
+	defer close(result)
+
+	go func() {
+		result <- vow.Exec(ioutil.Discard)
+	}()
+	time.Sleep(10 * time.Millisecond)
+
+	vow.Stop()
+	assert.True(t, vow.isCanceled())
+
+	r := <-result
+	assert.False(t, r)
 }
 
 func TestExec(t *testing.T) {

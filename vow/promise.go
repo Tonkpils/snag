@@ -2,6 +2,7 @@ package vow
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -10,6 +11,8 @@ import (
 	"syscall"
 	"time"
 )
+
+var errKilled = errors.New("promise has already been killed")
 
 var (
 	statusFailed     = "\r|" + red("Failed") + "     |\n"
@@ -30,6 +33,10 @@ func newPromise(name string, args ...string) *promise {
 }
 
 func (p *promise) Run(w io.Writer, verbose bool) (err error) {
+	if p.isKilled() {
+		return errKilled
+	}
+
 	var buf bytes.Buffer
 	p.cmd.Stdout = &buf
 	p.cmd.Stderr = &buf
@@ -60,9 +67,14 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 }
 
 func (p *promise) writeIfAlive(w io.Writer, b []byte) {
-	if atomic.LoadInt32(p.killed) == 0 {
-		w.Write([]byte(b))
+	if p.isKilled() {
+		return
 	}
+	w.Write([]byte(b))
+}
+
+func (p *promise) isKilled() bool {
+	return atomic.LoadInt32(p.killed) == 1
 }
 
 func (p *promise) kill() {

@@ -46,7 +46,11 @@ func (vow *Vow) isCanceled() bool {
 // Exec runs all of the commands a Vow has with all output redirected
 // to the given writer and returns a Result
 func (vow *Vow) Exec(w io.Writer) bool {
-	for i := 0; !vow.isCanceled() && i < len(vow.cmds); i++ {
+	for i := 0; i < len(vow.cmds); i++ {
+		if vow.isCanceled() {
+			return false
+		}
+
 		if err := vow.cmds[i].Run(w, vow.Verbose); err != nil {
 			return false
 		}
