@@ -55,7 +55,7 @@ after_script:
     fi
 
 before_deploy:
-  - PLATFORMS=(darwin/386 darwin/amd64 freebsd/386 freebsd/amd64 freebsd/arm linux/386 linux/amd64 linux/arm windows/386 windows/amd64)
+  - PLATFORMS=(darwin/386 darwin/amd64 linux/386 linux/amd64 windows/386 windows/amd64)
   - BINARY=snag
  # compile all go os/archs
   - |
@@ -81,26 +81,23 @@ before_deploy:
       if ! eval $build_cmd; then
         echo "Failed building snag for $PLATFORM" && return 1
       fi
-      if ! zip -9 snag-${GOOS}-${GOARCH}.zip snag; then
-        echo "Failed to zip snag for $PLATFORM" && return 1
+      
+      if [ "$GOOS" = "windows" ]; then
+        zip snag-${GOOS}-${GOARCH}.zip snag
+      else
+        tar cvzf snag-${GOOS}-${GOARCH}.tgz snag
       fi
-      echo "snag-${GOOS}-${GOARCH}.zip"
     done
 
 deploy:
   provider: releases
   api_key: $GITHUB_AUTH_TOKEN
   file:
-    - "snag-darwin-386.zip"
-    - "snag-darwin-amd64.zip"
+    - "snag-darwin-386.tgz"
+    - "snag-darwin-amd64.tgz"
 
-    - "snag-freebsd-386.zip"
-    - "snag-freebsd-arm.zip"
-    - "snag-freebsd-amd64.zip"
-
-    - "snag-linux-386.zip"
-    - "snag-linux-arm.zip"
-    - "snag-linux-amd64.zip"
+    - "snag-linux-386.tgz"
+    - "snag-linux-amd64.tgz"
 
     - "snag-windows-386.zip"
     - "snag-windows-amd64.zip"
