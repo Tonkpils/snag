@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,7 +16,24 @@ type config struct {
 	Verbose      bool     `yaml:"verbose"`
 }
 
+const (
+	Version       = "1.0.0"
+	VersionOutput = "Snag version " + Version
+)
+
+var version bool
+
+func init() {
+	flag.BoolVar(&version, "version", false, "display snag's version")
+}
+
 func main() {
+	flag.Parse()
+	if version {
+		fmt.Println(VersionOutput)
+		return
+	}
+
 	in, err := ioutil.ReadFile(".snag.yml")
 	if err != nil {
 		log.Fatal("Could not find '.snag.yml' in your current directory")
