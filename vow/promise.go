@@ -75,7 +75,8 @@ func (p *promise) writeIfAlive(w io.Writer, b []byte) {
 	if p.isKilled() {
 		return
 	}
-	w.Write([]byte(b))
+	// ignoring error since there is not much we can do
+	_, _ = w.Write(b)
 }
 
 func (p *promise) isKilled() bool {
