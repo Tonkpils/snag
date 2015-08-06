@@ -44,3 +44,11 @@ snag
 ```
 
 From a project with a `.snag.yml` file and develop away!
+
+## Troubleshooting
+
+* `open /dev/null: too many open files`
+
+You may experience this error if you're running on OSX. You may need to bump
+the maximum number of open file on your machine. You can refer to [this](http://krypted.com/mac-os-x/maximum-files-in-mac-os-x/)
+article for more information on the max files on OSX and [this](http://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1) superuser post for a solution
