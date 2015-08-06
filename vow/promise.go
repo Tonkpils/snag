@@ -87,7 +87,8 @@ func (p *promise) kill() {
 	atomic.StoreInt32(p.killed, 1)
 	p.cmdMtx.Lock()
 	if p.cmd.Process != nil {
-		p.cmd.Process.Signal(syscall.SIGTERM)
+		// if we can't signal the process assume it has died
+		_ = p.cmd.Process.Signal(syscall.SIGTERM)
 	}
 	p.cmdMtx.Unlock()
 }
