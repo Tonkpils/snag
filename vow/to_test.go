@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	echoScript = "./echo.sh"
-	failScript = "./fail.sh"
+	echoScript = "../fixtures/echo.sh"
+	failScript = "../fixtures/fail.sh"
 )
 
 func TestTo(t *testing.T) {

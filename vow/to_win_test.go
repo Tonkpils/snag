@@ -3,6 +3,6 @@
 package vow
 
 func init() {
-	echoScript = "echo.bat"
-	failScript = "fail.bat"
+	echoScript = `..\fixtures\echo.bat`
+	failScript = `..\fixtures\fail.bat`
 }
