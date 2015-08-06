@@ -7,9 +7,9 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
-	"time"
 )
 
 var errKilled = errors.New("promise has already been killed")
@@ -21,6 +21,7 @@ var (
 )
 
 type promise struct {
+	cmdMtx sync.Mutex
 	cmd    *exec.Cmd
 	killed *int32
 }
@@ -47,11 +48,15 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 		statusInProgress,
 		strings.Join(p.cmd.Args, " "),
 	)
+
+	p.cmdMtx.Lock()
 	if err := p.cmd.Start(); err != nil {
+		p.cmdMtx.Unlock()
 		p.writeIfAlive(w, []byte(statusFailed))
 		p.writeIfAlive(w, []byte(err.Error()+"\n"))
 		return err
 	}
+	p.cmdMtx.Unlock()
 
 	err = p.cmd.Wait()
 	if err != nil {
@@ -79,13 +84,9 @@ func (p *promise) isKilled() bool {
 
 func (p *promise) kill() {
 	atomic.StoreInt32(p.killed, 1)
+	p.cmdMtx.Lock()
 	if p.cmd.Process != nil {
-		if p.cmd.ProcessState != nil && !p.cmd.ProcessState.Exited() {
-			p.cmd.Process.Signal(syscall.SIGTERM)
-		}
-
-		for ; p.cmd.ProcessState != nil &&
-			!p.cmd.ProcessState.Exited(); <-time.After(100 * time.Millisecond) {
-		}
+		p.cmd.Process.Signal(syscall.SIGTERM)
 	}
+	p.cmdMtx.Unlock()
 }

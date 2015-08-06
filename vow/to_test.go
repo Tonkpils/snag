@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,10 +47,12 @@ func TestStop(t *testing.T) {
 	result := make(chan bool)
 	defer close(result)
 
+	started := make(chan struct{})
 	go func() {
+		close(started)
 		result <- vow.Exec(ioutil.Discard)
 	}()
-	time.Sleep(10 * time.Millisecond)
+	<-started
 
 	vow.Stop()
 	assert.True(t, vow.isCanceled())
