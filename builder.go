@@ -116,11 +116,11 @@ func (b *Bob) maybeQueue(path string) {
 }
 
 func (b *Bob) stopCurVow() {
+	b.mtx.Lock()
 	if b.curVow != nil {
-		b.mtx.Lock()
 		b.curVow.Stop()
-		b.mtx.Unlock()
 	}
+	b.mtx.Unlock()
 }
 
 func (b *Bob) execute() {
