@@ -61,7 +61,9 @@ func (b *Bob) Close() error {
 
 func (b *Bob) Watch(path string) error {
 	b.watchDir = path
-	b.watch(path)
+	// this can never return false since we will always
+	// have at least one file in the directory (.snag.yml)
+	_ = b.watch(path)
 	b.execute()
 
 	for {
