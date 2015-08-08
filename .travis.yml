@@ -81,7 +81,7 @@ before_deploy:
       if ! eval $build_cmd; then
         echo "Failed building snag for $PLATFORM" && return 1
       fi
-      
+
       if [ "$GOOS" = "windows" ]; then
         zip snag-${GOOS}-${GOARCH}.zip snag
       else
@@ -105,3 +105,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    condition: "$TRAVIS_GO_VERSION == go1.4*"
