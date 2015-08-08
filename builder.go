@@ -97,15 +97,20 @@ func (b *Bob) maybeQueue(path string) {
 	}
 
 	stat, err := os.Stat(path)
-	if err == nil {
-		mtime := stat.ModTime()
-		lasttime := mtimes[path]
-		if !mtime.Equal(lasttime) {
-			mtimes[path] = mtime
-			b.execute()
-		}
-	} else {
+	if err != nil {
+		// we couldn't find the file
+		// most likely a deletion
 		delete(mtimes, path)
+		b.execute()
+		return
+	}
+
+	mtime := stat.ModTime()
+	lasttime := mtimes[path]
+	if !mtime.Equal(lasttime) {
+		// the file has been modified and the
+		// file system event wasn't bogus
+		mtimes[path] = mtime
 		b.execute()
 	}
 }
@@ -149,18 +154,20 @@ func (b *Bob) watch(path string) bool {
 			return filepath.SkipDir
 		}
 
-		if fi.IsDir() {
-			if b.isExcluded(p) {
-				return filepath.SkipDir
-			}
-
-			if err := b.w.Add(p); err != nil {
-				return err
-			}
-			b.watching[p] = struct{}{}
-		} else {
+		if !fi.IsDir() {
 			shouldBuild = true
+			return nil
 		}
+
+		if b.isExcluded(p) {
+			return filepath.SkipDir
+		}
+
+		if err := b.w.Add(p); err != nil {
+			return err
+		}
+		b.watching[p] = struct{}{}
+
 		return nil
 	})
 	return shouldBuild

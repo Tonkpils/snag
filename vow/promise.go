@@ -59,11 +59,12 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 	p.cmdMtx.Unlock()
 
 	err = p.cmd.Wait()
+
+	status := statusPassed
 	if err != nil {
-		p.writeIfAlive(w, []byte(statusFailed))
-	} else {
-		p.writeIfAlive(w, []byte(statusPassed))
+		status = statusFailed
 	}
+	p.writeIfAlive(w, []byte(status))
 
 	if verbose || err != nil {
 		p.writeIfAlive(w, buf.Bytes())
