@@ -19,10 +19,11 @@ download the binary for your platform.
 
 ## Usage
 
-Snag works by reading a `.snag.yml` file which contains a set of
-commands, ignored directories, and options.
+Snag works by reading a yaml file named `.snag.yml`. It allows you to configure what snag will
+run and what it should ignore. The file **must** reside in the same
+directory that you want to watch.
 
-As an example, the file with these contents:
+Here is a sample of a `.snag.yml` file:
 
 ```yml
 script:
@@ -30,12 +31,15 @@ script:
   - go test
 ignore:
   - .git
+  - myfile.ext
 verbose: true
 ```
 
-will make snag run the commands `echo "hello world"` and `go test`,
-ignoring changes in the `.git` directory, and returning output on success
-through the `verbose` option.
+By default, snag will watch all files/folders within the current directory recursively.
+The ignore section will tell snag to ignore any changes that happen
+in the `.git` directory and any changes that happen to the `myfile.ext` file.
+
+The script section of the file will be executed when any file is created, deleted, or modified.
 
 Simply run:
 
