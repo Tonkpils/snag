@@ -1,8 +1,8 @@
 language: go
 
 go:
-  - 1.3
   - 1.4
+  - 1.5
   - tip
 
 before_install:
@@ -57,16 +57,6 @@ after_script:
 before_deploy:
   - PLATFORMS=(darwin/386 darwin/amd64 linux/386 linux/amd64 windows/386 windows/amd64)
   - BINARY=snag
- # compile all go os/archs
-  - |
-    current_dir=$(pwd)
-    cd $(go env GOROOT)/src
-    for PLATFORM in "${PLATFORMS[@]}"; do
-      if ! GOOS=${PLATFORM%/*} GOARCH=${PLATFORM#*/} ./make.bash --no-clean 2>&1; then
-        echo "Failed installed go stdlib for $PLATFORM" && exit 1
-      fi
-    done
-    cd $current_dir
  # build binary for all archs
   - |
     for PLATFORM in "${PLATFORMS[@]}"; do
@@ -105,4 +95,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    condition: "$TRAVIS_GO_VERSION == go1.4*"
+    condition: "$TRAVIS_GO_VERSION == go1.5*"
