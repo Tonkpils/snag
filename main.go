@@ -6,12 +6,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/Tonkpils/snag/vow"
 	"gopkg.in/yaml.v2"
 )
 
 type config struct {
 	Script       []string `yaml:"script"`
+	Install      []string `yaml:"install"`
 	IgnoredItems []string `yaml:"ignore"`
 	Verbose      bool     `yaml:"verbose"`
 }
@@ -21,7 +24,10 @@ const (
 	VersionOutput = "Snag version " + Version
 )
 
-var version bool
+var (
+	version       bool
+	runningDocker string
+)
 
 func init() {
 	flag.BoolVar(&version, "version", false, "display snag's version")
@@ -48,6 +54,10 @@ func main() {
 		log.Fatal("You must have at least 1 command in your '.snag.yml'")
 	}
 
+	if runningDocker != "" {
+		installDeps(c.Install)
+	}
+
 	b, err := NewBuilder(c)
 	if err != nil {
 		log.Fatal(err)
@@ -60,4 +70,20 @@ func main() {
 	}
 
 	b.Watch(wd)
+}
+
+func installDeps(installSteps []string) {
+	if len(installSteps) == 0 {
+		return
+	}
+
+	args := strings.Split(installSteps[0], " ")
+	v := vow.To(args[0], args[1:]...)
+
+	for i := 1; i < len(installSteps); i++ {
+		args = strings.Split(installSteps[i], " ")
+		v.Then(args[0], args[1:]...)
+	}
+
+	v.Exec(os.Stdout)
 }

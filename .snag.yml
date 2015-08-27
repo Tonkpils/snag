@@ -5,6 +5,10 @@ ignore:
   - snag
   - snag.exe
 
+install:
+  - apt-get update
+  - apt-install -y git
+
 script:
   - go build
   - go vet
