@@ -7,6 +7,6 @@ WORKDIR $GOPATH/src/github.com/Tonkpils/snag
 ADD . $GOPATH/src/github.com/Tonkpils/snag
 
 RUN go get -t 
-RUN go install -ldflags "-X main.runningDocker=true"
+RUN go build -ldflags "-X main.runningDocker=true" -o $GOPATH/bin/snag
 
 WORKDIR /
