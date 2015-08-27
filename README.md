@@ -6,16 +6,27 @@ An automatic build tool for all your needs
 
 ## Installation
 
+### Releases
+
+You can visit the [releases](https://github.com/Tonkpils/snag/releases) section to
+download the binary for your platform.
+
+## [Homebrew](http://brew.sh/)
+
+We've got a formula in homebrew!
+
+```bash
+brew update && brew install snag
+```
+
+### Source
+
 If you have [go](http://golang.org/) installed and want to install
 the latest and greatest you can run:
 
 ```go
 $ go get github.com/Tonkpils/snag
 ```
-
-If you do not have go installed on your machine, you can checkout
-the [releases](https://github.com/Tonkpils/snag/releases) section to
-download the binary for your platform.
 
 ## Usage
 
