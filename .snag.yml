@@ -7,7 +7,7 @@ ignore:
 
 install:
   - apt-get update
-  - apt-install -y git
+  - apt-get install -y git
 
 script:
   - go build
