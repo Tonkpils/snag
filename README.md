@@ -60,7 +60,7 @@ snag
 
 From a project with a `.snag.yml` file and develop away!
 
-## Caveats 
+## Caveats
 
 * Endless build loops
 
@@ -68,6 +68,26 @@ Snag will run your configured scripts if **ANY** file modifed in your current di
 If you scripts generate any files, you should add them to the `ignore` section in your
 `.snag.yml` to avoid an endless build loop.
 
+* Trouble running shell scripts
+
+In order to run shell scripts, your must have a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) in it. If you are trying to run a script without a
+shebang, you will need to specify the shell it should run in.
+
+i.e.
+
+Running a script with a shebang
+
+```yaml
+scripts:
+  - ./my-script
+```
+
+Running a script **without** a shebang
+
+```yaml
+scripts:
+  - bash my-script
+```
 
 ## Known Issues
 
