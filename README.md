@@ -60,6 +60,32 @@ snag
 
 From a project with a `.snag.yml` file and develop away!
 
+### Quick Use
+
+If you find yourself working on a project that does not contain a snag file and
+still want to use snag, you can use flags to specify commands to run.
+
+The `-c` flag allows specifying a command just like the snag file and can
+be defined more than once for multiple commands. The order of the commands
+depends on the order of the flag.
+
+```sh
+snag -c "echo snag world" -c "echo rocks"
+```
+
+will output
+
+```sh
+|Passed     | echo snag world
+|Passed     | echo rocks
+```
+
+The `-v` flag enables verbose output. It will also override the `verbose`
+option form the snag file if it is defined to false.
+
+**NOTE**: using the `-c` flag will skip reading a snag file even if it
+exists in the current working directory.
+
 ## Caveats
 
 * Endless build loops
