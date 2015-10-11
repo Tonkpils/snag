@@ -10,6 +10,17 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type argSlice []string
+
+func (c *argSlice) String() string {
+	return fmt.Sprintf("%s", *c)
+}
+
+func (a *argSlice) Set(value string) error {
+	*a = append(*a, value)
+	return nil
+}
+
 type config struct {
 	Script       []string `yaml:"script"`
 	IgnoredItems []string `yaml:"ignore"`
@@ -21,9 +32,15 @@ const (
 	VersionOutput = "Snag version " + Version
 )
 
-var version bool
+var (
+	cliCmds argSlice
+	version bool
+	verbose bool
+)
 
 func init() {
+	flag.Var(&cliCmds, "c", "List of commands to execute")
+	flag.BoolVar(&verbose, "v", false, "Verbose output")
 	flag.BoolVar(&version, "version", false, "display snag's version")
 }
 
@@ -34,18 +51,27 @@ func main() {
 		return
 	}
 
-	in, err := ioutil.ReadFile(".snag.yml")
-	if err != nil {
-		log.Fatal("Could not find '.snag.yml' in your current directory")
-	}
-
 	var c config
-	if err := yaml.Unmarshal(in, &c); err != nil {
-		log.Fatalf("Could not parse yml file. %s\n", err)
+	if len(cliCmds) > 0 {
+		c.Script = cliCmds
+	} else {
+		in, err := ioutil.ReadFile(".snag.yml")
+		if err != nil {
+			log.Fatal("Could not find '.snag.yml' in your current directory")
+		}
+
+		if err := yaml.Unmarshal(in, &c); err != nil {
+			log.Fatalf("Could not parse yml file. %s\n", err)
+		}
+
 	}
 
 	if len(c.Script) == 0 {
-		log.Fatal("You must have at least 1 command in your '.snag.yml'")
+		log.Fatal("You must specify at least 1 command.")
+	}
+
+	if verbose {
+		c.Verbose = verbose
 	}
 
 	b, err := NewBuilder(c)
