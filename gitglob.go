@@ -46,7 +46,11 @@ func globMatch(pattern, value string) bool {
 	// Two consecutive asterisks ("**") in patterns matched
 	// against full pathname may have special meaning:
 	if strings.Contains(pattern, dblAsterisks) {
-		return evalDblAsterisk(pattern, value)
+		result := evalDblAsterisk(pattern, value)
+		if negate {
+			result = !result
+		}
+		return result
 	}
 
 	// If the pattern does not contain a slash /, Git treats it as a shell glob

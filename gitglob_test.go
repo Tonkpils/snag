@@ -34,66 +34,57 @@ func TestGlobMatch(t *testing.T) {
 	defer os.RemoveAll(os.TempDir() + "/snag")
 
 	// blank line
-	p := ""
-	assert.False(t, globMatch(p, v), "Expected %q to NOT match %q", p, v)
+	assert.False(t, globMatch("", v))
 
 	// a comment
-	p = "#a comment"
-	assert.False(t, globMatch(p, v), "Expected %q to NOT match %q", p, v)
+	assert.False(t, globMatch("#a comment", v))
 
 	// regular match no slash
-	p = "gitglob.go"
-	assert.True(t, globMatch(p, "gitglob.go"), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch("gitglob.go", "gitglob.go"))
 
 	// negation no slash
-	p = "!gitglob.go"
-	assert.False(t, globMatch(p, "gitglob.go"), "Expected %q to NOT match %q", p, v)
+	assert.False(t, globMatch("!gitglob.go", "gitglob.go"))
 
 	// match with slash
-	p = tempLoc() + "/foo.txt"
-
 	tmpFiles := []string{"foo.txt"}
 	createFiles(t, tmpFiles)
-	assert.True(t, globMatch(p, v+"/foo.txt"), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch(tempLoc()+"/foo.txt", v+"/foo.txt"))
 	deleteFiles(t, tmpFiles)
 
 	// negate match with slash
-	p = "!" + tempLoc() + "/foo.txt"
-
 	tmpFiles = []string{"foo.txt"}
 	createFiles(t, tmpFiles)
-	assert.False(t, globMatch(p, v+"/foo.txt"), "Expected %q to NOT match %q", p, v)
+	assert.False(t, globMatch("!"+tempLoc()+"/foo.txt", v+"/foo.txt"))
 	deleteFiles(t, tmpFiles)
 
 	// directory
-	p = tempLoc()
-	assert.True(t, globMatch(p, v), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch(tempLoc(), v))
 
 	// directory with trailing slash
-	p = tempLoc() + "/"
-	assert.True(t, globMatch(p, v), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch(tempLoc()+"/", v))
 
 	// star matching
-	p = tempLoc() + "/*.txt"
 	tmpFiles = []string{"foo.txt"}
 	createFiles(t, tmpFiles)
-	assert.True(t, globMatch(p, v+"/foo.txt"), "Expected %q to match %q", p, v)
-	assert.False(t, globMatch(p, v+"/somedir/foo.txt"), "Expected %q to NOT match %q", p, v)
+	assert.True(t, globMatch(tempLoc()+"/*.txt", v+"/foo.txt"))
+	assert.False(t, globMatch(tempLoc()+"/*.txt", v+"/somedir/foo.txt"))
 	deleteFiles(t, tmpFiles)
 
 	// double star prefix
-	p = "**/foo.txt"
-	assert.True(t, globMatch(p, v+"/hello/foo.txt"), "Expected %q to match %q", p, v)
-	assert.True(t, globMatch(p, v+"/some/dirs/foo.txt"), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch("**/foo.txt", v+"/hello/foo.txt"))
+	assert.True(t, globMatch("**/foo.txt", v+"/some/dirs/foo.txt"))
 
 	// double star suffix
-	p = tempLoc() + "/hello/**"
-	assert.True(t, globMatch(p, v+"/hello/foo.txt"), "Expected %q to match %q", p, v)
-	assert.False(t, globMatch(p, v+"/some/dirs/foo.txt"), "Expected %q to NOT match %q", p, v)
+	assert.True(t, globMatch(tempLoc()+"/hello/**", v+"/hello/foo.txt"))
+	assert.False(t, globMatch(tempLoc()+"/hello/**", v+"/some/dirs/foo.txt"))
 
 	// double star in path
-	p = tempLoc() + "/hello/**/world.txt"
-	assert.True(t, globMatch(p, v+"/hello/world.txt"), "Expected %q to match %q", p, v)
-	assert.True(t, globMatch(p, v+"/hello/stuff/world.txt"), "Expected %q to match %q", p, v)
-	assert.False(t, globMatch(p, v+"/some/dirs/foo.txt"), "Expected %q to NOT match %q", p, v)
+	assert.True(t, globMatch(tempLoc()+"/hello/**/world.txt", v+"/hello/world.txt"))
+	assert.True(t, globMatch(tempLoc()+"/hello/**/world.txt", v+"/hello/stuff/world.txt"))
+	assert.False(t, globMatch(tempLoc()+"/hello/**/world.txt", v+"/some/dirs/foo.txt"))
+
+	// negate doubl start patterns
+	assert.False(t, globMatch("!**/foo.txt", v+"/hello/foo.txt"))
+	assert.False(t, globMatch("!"+tempLoc()+"/hello/**", v+"/hello/foo.txt"))
+	assert.False(t, globMatch("!"+tempLoc()+"/hello/**/world.txt", v+"/hello/world.txt"))
 }
