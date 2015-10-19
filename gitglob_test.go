@@ -80,4 +80,20 @@ func TestGlobMatch(t *testing.T) {
 	assert.True(t, globMatch(p, v+"/foo.txt"), "Expected %q to match %q", p, v)
 	assert.False(t, globMatch(p, v+"/somedir/foo.txt"), "Expected %q to NOT match %q", p, v)
 	deleteFiles(t, tmpFiles)
+
+	// double star prefix
+	p = "**/foo.txt"
+	assert.True(t, globMatch(p, v+"/hello/foo.txt"), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch(p, v+"/some/dirs/foo.txt"), "Expected %q to match %q", p, v)
+
+	// double star suffix
+	p = tempLoc() + "/hello/**"
+	assert.True(t, globMatch(p, v+"/hello/foo.txt"), "Expected %q to match %q", p, v)
+	assert.False(t, globMatch(p, v+"/some/dirs/foo.txt"), "Expected %q to NOT match %q", p, v)
+
+	// double star in path
+	p = tempLoc() + "/hello/**/world.txt"
+	assert.True(t, globMatch(p, v+"/hello/world.txt"), "Expected %q to match %q", p, v)
+	assert.True(t, globMatch(p, v+"/hello/stuff/world.txt"), "Expected %q to match %q", p, v)
+	assert.False(t, globMatch(p, v+"/some/dirs/foo.txt"), "Expected %q to NOT match %q", p, v)
 }

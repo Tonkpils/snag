@@ -8,9 +8,7 @@ import (
 	"strings"
 )
 
-// https://www.kernel.org/pub/software/scm/git/docs/gitignore.html
-
-const globChar = "*"
+const dblAsterisks = "**"
 
 func globMatch(pattern, value string) bool {
 	// A blank line matches no files, so it can serve as a separator for readability.
@@ -44,6 +42,12 @@ func globMatch(pattern, value string) bool {
 	// but will not match a regular file or a symbolic link foo (this is consistent
 	// with the way how pathspec works in general in Git).
 	pattern = strings.TrimSuffix(pattern, string(os.PathSeparator))
+
+	// Two consecutive asterisks ("**") in patterns matched
+	// against full pathname may have special meaning:
+	if strings.Contains(pattern, dblAsterisks) {
+		return evalDblAsterisk(pattern, value)
+	}
 
 	// If the pattern does not contain a slash /, Git treats it as a shell glob
 	// pattern and checks for a match against the pathname relative to the location
@@ -83,22 +87,47 @@ func globMatch(pattern, value string) bool {
 	return matched
 }
 
-func globTwoStarts() bool {
-	// Two consecutive asterisks ("**") in patterns matched
-	// against full pathname may have special meaning:
-
+func evalDblAsterisk(pattern, value string) bool {
 	// A leading "**" followed by a slash means match in all directories.
 	// For example, "**/foo" matches file or directory "foo" anywhere,
 	// the same as pattern "foo". "**/foo/bar" matches file or directory
 	// "bar" anywhere that is directly under directory "foo".
+	if strings.HasPrefix(pattern, dblAsterisks) {
+		pattern = strings.TrimPrefix(pattern, dblAsterisks)
+		return strings.HasSuffix(value, pattern)
+	}
 
 	// A trailing "/**" matches everything inside. For example, "abc/**"
 	// matches all files inside directory "abc", relative to the location
 	// of the .gitignore file, with infinite depth.
+	if strings.HasSuffix(pattern, dblAsterisks) {
+		pattern = strings.TrimSuffix(pattern, dblAsterisks)
+		return strings.HasPrefix(value, pattern)
+	}
 
 	// A slash followed by two consecutive asterisks then a slash matches
 	// zero or more directories. For example, "a/**/b" matches "a/b",
 	// /"a/x/b", "a/x/y/b" and so on.
+	parts := strings.Split(pattern, dblAsterisks)
+	for i, part := range parts {
+		switch i {
+		case 0:
+			if !strings.HasPrefix(value, part) {
+				return false
+			}
+		case len(parts) - 1: // last part
+			part = strings.TrimPrefix(part, string(os.PathSeparator))
+			return strings.HasSuffix(value, part)
+		default:
+			if !strings.Contains(value, part) {
+				return false
+			}
+		}
+
+		// trim evaluated text
+		index := strings.Index(value, part) + len(part)
+		value = value[index:]
+	}
 
 	// Other consecutive asterisks are considered invalid.
 	return false
