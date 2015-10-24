@@ -65,10 +65,18 @@ func globMatch(pattern, value string) bool {
 			return false
 		}
 
-		if negate {
-			return len(m) == 0
+		var found bool
+		for _, v := range m {
+			if v == value {
+				found = true
+				break
+			}
 		}
-		return len(m) != 0
+
+		if negate {
+			return !found
+		}
+		return found
 	}
 
 	// Otherwise, Git treats the pattern as a shell glob suitable for consumption by
