@@ -42,6 +42,11 @@ func NewBuilder(c config) (*Bob, error) {
 	cmds := make([][]string, len(c.Script))
 	for i, s := range c.Script {
 		cmds[i] = strings.Split(s, " ")
+
+		// check for environment variables inside script
+		if strings.Contains(s, "$$") {
+			replaceEnv(cmds[i])
+		}
 	}
 
 	return &Bob{
@@ -52,6 +57,16 @@ func NewBuilder(c config) (*Bob, error) {
 		ignoredItems: c.IgnoredItems,
 		verbose:      c.Verbose,
 	}, nil
+}
+
+func replaceEnv(cmds []string) {
+	for i, c := range cmds {
+		if !strings.HasPrefix(c, "$$") {
+			continue
+		}
+
+		cmds[i] = os.Getenv(strings.TrimPrefix(c, "$$"))
+	}
 }
 
 func (b *Bob) Close() error {

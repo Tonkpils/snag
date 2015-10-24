@@ -36,7 +36,7 @@ directory that you want to watch.
 
 Here is a sample of a `.snag.yml` file:
 
-```yml
+```yaml
 script:
   - echo "hello world"
   - go test
@@ -85,6 +85,16 @@ option form the snag file if it is defined to false.
 
 **NOTE**: using the `-c` flag will skip reading a snag file even if it
 exists in the current working directory.
+
+### Environment Variables
+
+You can access your shell's environment variables by using `$$`.
+
+```yaml
+script:
+  - echo $$MY_VAR
+  - rm -rf $$OUTPUT_DIR
+```
 
 ## Caveats
 
