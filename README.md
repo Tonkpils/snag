@@ -42,13 +42,15 @@ script:
   - go test
 ignore:
   - .git
-  - myfile.ext
+  - "**.ext"
+  - "foo/**/bar.sh"
 verbose: true
 ```
 
 By default, snag will watch all files/folders within the current directory recursively.
 The ignore section will tell snag to ignore any changes that happen
-in the `.git` directory and any changes that happen to the `myfile.ext` file.
+to the directories/files listed. The ignore section uses the same pattern matching
+that [gitignore](https://www.kernel.org/pub/software/scm/git/docs/gitignore.html) uses.
 
 The script section of the file will be executed when any file is created, deleted, or modified.
 
@@ -98,13 +100,13 @@ script:
 
 ## Caveats
 
-* Endless build loops
+### Endless build loops
 
 Snag will run your configured scripts if **ANY** file modifed in your current directory.
 If you scripts generate any files, you should add them to the `ignore` section in your
 `.snag.yml` to avoid an endless build loop.
 
-* Trouble running shell scripts
+### Trouble running shell scripts
 
 In order to run shell scripts, your must have a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) in it. If you are trying to run a script without a
 shebang, you will need to specify the shell it should run in.
@@ -123,6 +125,17 @@ Running a script **without** a shebang
 ```yaml
 scripts:
   - bash my-script
+```
+
+### Ignore Pattern Matching
+
+If you want to use asterisks in the ignore section of you snag.yml,
+you need to make sure to wrap them in quotes or you may run into an
+error like:
+
+```
+$ snag
+2015/10/24 19:39:40 Could not parse yml file. yaml: line 6: did not find expected alphabetic or numeric character
 ```
 
 ## Known Issues

@@ -195,7 +195,7 @@ func (b *Bob) isExcluded(path string) bool {
 	path = strings.TrimPrefix(path, b.watchDir+string(filepath.Separator))
 
 	for _, p := range b.ignoredItems {
-		if p == path {
+		if globMatch(p, path) {
 			return true
 		}
 	}
