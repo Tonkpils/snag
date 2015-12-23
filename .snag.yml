@@ -5,7 +5,7 @@ ignore:
   - snag
   - snag.exe
 
-script:
+build:
   - go build
   - go vet
   - gofmt -l -s .

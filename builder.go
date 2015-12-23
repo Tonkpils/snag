@@ -39,8 +39,8 @@ func NewBuilder(c config) (*Bob, error) {
 		return nil, err
 	}
 
-	cmds := make([][]string, len(c.Script))
-	for i, s := range c.Script {
+	cmds := make([][]string, len(c.Build))
+	for i, s := range c.Build {
 		cmds[i] = strings.Split(s, " ")
 
 		// check for environment variables inside script
