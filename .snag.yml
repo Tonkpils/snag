@@ -4,9 +4,10 @@ ignore:
   - .git
   - snag
   - snag.exe
+  - "tmp**"
 
 build:
   - go build
   - go vet
   - gofmt -l -s .
-  - go test ./... -v -race
+  - go test ./... -v -test.short

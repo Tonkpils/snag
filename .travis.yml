@@ -24,7 +24,7 @@ script:
   # vet out possible issues
   - go vet ./...
   # run tests
-  - go test ./...
+  - go test ./... -v -race
 
 after_success:
   - |
