@@ -18,7 +18,7 @@ func TestNewBuilder_EnvScript(t *testing.T) {
 	testEnv := "foobar"
 	os.Setenv("TEST_ENV", testEnv)
 	b, err := NewBuilder(config{
-		Script: []string{"echo $$TEST_ENV"},
+		Build: []string{"echo $$TEST_ENV"},
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, b)
