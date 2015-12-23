@@ -94,7 +94,7 @@ func parseConfig() (config, error) {
 	// if both script and build are specified
 	// blow up and tell the user to use build
 	if len(c.Script) != 0 && len(c.Build) != 0 {
-		return c, errors.New("Cannot use 'script' and 'build' together. The 'script' tag is deprecated, please use 'build' instead")
+		return c, errors.New("Cannot use 'script' and 'build' together. The 'script' tag is deprecated, please use 'build' instead.")
 	}
 
 	// if script has something, tell the user it's deprecated
