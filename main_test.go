@@ -62,10 +62,6 @@ func TestParseConfig_ScriptAndBuild(t *testing.T) {
 }
 
 func TestParseConfig_Script(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
 	wd, tmpDir := tmpDirectory(t)
 	defer os.RemoveAll(tmpDir)
 

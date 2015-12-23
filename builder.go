@@ -27,6 +27,7 @@ type Bob struct {
 	watching map[string]struct{}
 	watchDir string
 
+	depWarning   string
 	cmds         [][]string
 	ignoredItems []string
 
@@ -54,6 +55,7 @@ func NewBuilder(c config) (*Bob, error) {
 		done:         make(chan struct{}),
 		watching:     map[string]struct{}{},
 		cmds:         cmds,
+		depWarning:   c.DepWarnning,
 		ignoredItems: c.IgnoredItems,
 		verbose:      c.Verbose,
 	}, nil
@@ -145,6 +147,10 @@ func (b *Bob) execute() {
 
 	clearBuffer()
 	b.mtx.Lock()
+
+	if len(b.depWarning) > 0 {
+		fmt.Printf("Deprecation Warnings!\n%s", b.depWarning)
+	}
 
 	// setup the first command
 	firstCmd := b.cmds[0]

@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -24,6 +23,7 @@ func (a *argSlice) Set(value string) error {
 }
 
 type config struct {
+	DepWarnning  string
 	Script       []string `yaml:"script"`
 	Build        []string `yaml:"build"`
 	IgnoredItems []string `yaml:"ignore"`
@@ -100,12 +100,8 @@ func parseConfig() (config, error) {
 	// if script has something, tell the user it's deprecated
 	// and set whatever its contents are to build
 	if len(c.Script) != 0 {
-		fmt.Println("The use of 'script' in the yaml file has been deprecated and will be removed in the future.")
-		fmt.Println("Please start using 'build' instead.")
+		c.DepWarnning += "*\tThe use of 'script' in the yaml file has been deprecated and will be removed in the future.\n\tPlease start using 'build' instead.\n\n"
 		c.Build = c.Script
-		// give the user some time to read the message before everything starts
-		// and we clear the text
-		time.Sleep(5 * time.Second)
 	}
 
 	if len(c.Build) == 0 {
