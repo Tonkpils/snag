@@ -120,6 +120,7 @@ func tmpDirectory(t *testing.T) (string, string) {
 func writeSnagFile(t *testing.T, content string) {
 	f, err := os.Create(".snag.yml")
 	require.NoError(t, err, "could not create snag.yml")
+	defer f.Close()
 
 	_, err = f.WriteString(content)
 	require.NoError(t, err, "could not write content to snag.yml")
