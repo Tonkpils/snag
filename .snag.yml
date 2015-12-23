@@ -4,7 +4,6 @@ ignore:
   - .git
   - snag
   - snag.exe
-  - "tmp**"
 
 build:
   - go build

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
-	"path"
 	"regexp"
 	"strconv"
 	"testing"
@@ -116,8 +116,7 @@ func tmpDirectory(t *testing.T) (string, string) {
 	wd, err := os.Getwd()
 	require.NoError(t, err, "could not get working directory")
 
-	tmpDir := path.Join(wd, "tmp", strconv.FormatInt(time.Now().UnixNano(), 10))
-	err = os.MkdirAll(tmpDir, 0700)
+	tmpDir, err := ioutil.TempDir("", strconv.FormatInt(time.Now().UnixNano(), 10))
 	require.NoError(t, err, "could not create tmp directory")
 	return wd, tmpDir
 }
