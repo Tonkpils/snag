@@ -23,8 +23,8 @@ func TestNewBuilder_EnvScript(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, b)
 
-	require.Len(t, b.cmds, 1)
-	assert.Equal(t, testEnv, b.cmds[0][1])
+	require.Len(t, b.buildCmds, 1)
+	assert.Equal(t, testEnv, b.buildCmds[0][1])
 }
 
 func TestClose(t *testing.T) {

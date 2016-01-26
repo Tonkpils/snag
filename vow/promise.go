@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"syscall"
+	"time"
 )
 
 var errKilled = errors.New("promise has already been killed")
@@ -23,6 +24,7 @@ var (
 type promise struct {
 	cmdMtx sync.Mutex
 	cmd    *exec.Cmd
+	async  bool
 	killed *int32
 }
 
@@ -31,6 +33,12 @@ func newPromise(name string, args ...string) *promise {
 		cmd:    exec.Command(name, args...),
 		killed: new(int32),
 	}
+}
+
+func newAsyncPromise(name string, args ...string) *promise {
+	p := newPromise(name, args...)
+	p.async = true
+	return p
 }
 
 func (p *promise) Run(w io.Writer, verbose bool) (err error) {
@@ -58,6 +66,13 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 	}
 	p.cmdMtx.Unlock()
 
+	// if the process is async we don't need to do anything else
+	if p.async {
+		fmt.Println(" process id: ", p.cmd.Process.Pid)
+		go p.fowardOutput(p.cmd.Process.Pid, w, &buf)
+		return nil
+	}
+
 	err = p.cmd.Wait()
 
 	status := statusPassed
@@ -70,6 +85,18 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 		p.writeIfAlive(w, buf.Bytes())
 	}
 	return err
+}
+
+func (p *promise) fowardOutput(pid int, w io.Writer, buf *bytes.Buffer) {
+	prefix := []byte(fmt.Sprintf("pid %d : ", pid))
+	for t := time.Tick(time.Second); !p.isKilled(); <-t {
+		b := buf.Next(1024)
+		if len(b) == 0 {
+			continue
+		}
+
+		p.writeIfAlive(w, append(prefix, b...))
+	}
 }
 
 func (p *promise) writeIfAlive(w io.Writer, b []byte) {

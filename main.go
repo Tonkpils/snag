@@ -26,6 +26,7 @@ type config struct {
 	DepWarnning  string
 	Script       []string `yaml:"script"`
 	Build        []string `yaml:"build"`
+	Run          []string `yaml:"run"`
 	IgnoredItems []string `yaml:"ignore"`
 	Verbose      bool     `yaml:"verbose"`
 }

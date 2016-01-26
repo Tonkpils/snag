@@ -31,6 +31,11 @@ func (vow *Vow) Then(name string, args ...string) *Vow {
 	return vow
 }
 
+func (vow *Vow) ThenAsync(name string, args ...string) *Vow {
+	vow.cmds = append(vow.cmds, newAsyncPromise(name, args...))
+	return vow
+}
+
 // Stop terminates the active command and stops the execution of any future commands
 func (vow *Vow) Stop() {
 	atomic.StoreInt32(vow.canceled, 1)
