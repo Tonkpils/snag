@@ -78,9 +78,11 @@ func TestStopAsync(t *testing.T) {
 	<-time.After(10 * time.Millisecond)
 
 	vow.Stop()
-	for _, cmd := range vow.cmds {
-		cmd.cmd.Wait()
-		assert.True(t, cmd.cmd.ProcessState.Exited())
+	for _, p := range vow.cmds {
+		p.cmdMtx.Lock()
+		p.cmd.Wait()
+		assert.True(t, p.cmd.ProcessState.Exited())
+		p.cmdMtx.Unlock()
 	}
 }
 

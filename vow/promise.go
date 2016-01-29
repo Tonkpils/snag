@@ -116,7 +116,9 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 }
 
 func (p *promise) wait(w io.Writer, verbose bool, buf *syncBuffer) error {
+	p.cmdMtx.Lock()
 	err := p.cmd.Wait()
+	p.cmdMtx.Unlock()
 
 	status := statusPassed
 	if err != nil {
