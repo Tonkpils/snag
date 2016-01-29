@@ -106,26 +106,39 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 
 	// if the process is async we don't need to do anything else
 	if p.async {
+		fmt.Println(" -- process id: ", p.cmd.Process.Pid)
 		go p.fowardOutput(p.cmd.Process.Pid, w, buf)
+		go p.wait(w, verbose, buf)
 		return nil
 	}
 
-	err = p.cmd.Wait()
+	return p.wait(w, verbose, buf)
+}
+
+func (p *promise) wait(w io.Writer, verbose bool, buf *syncBuffer) error {
+	err := p.cmd.Wait()
 
 	status := statusPassed
 	if err != nil {
 		status = statusFailed
 	}
+
+	if p.async {
+		status = status[1 : len(status)-1]
+		status = fmt.Sprintf("%s %s\n", status, strings.Join(p.cmd.Args, " "))
+	}
+
 	p.writeIfAlive(w, []byte(status))
 
 	if verbose || err != nil {
 		p.writeIfAlive(w, buf.Bytes())
 	}
+
 	return err
 }
 
 func (p *promise) fowardOutput(pid int, w io.Writer, buf *syncBuffer) {
-	prefix := []byte(fmt.Sprintf("pid %d : ", pid))
+	prefix := []byte(yellow(fmt.Sprintf("pid %d : ", pid)))
 	for t := time.Tick(time.Second); !p.isKilled(); <-t {
 		b := buf.Next(1024)
 		if len(b) == 0 {
