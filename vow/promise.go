@@ -68,8 +68,8 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 
 	// if the process is async we don't need to do anything else
 	if p.async {
-		fmt.Println(" process id: ", p.cmd.Process.Pid)
 		go p.fowardOutput(p.cmd.Process.Pid, w, &buf)
+		go p.cmd.Wait()
 		return nil
 	}
 
