@@ -79,6 +79,7 @@ func TestStopAsync(t *testing.T) {
 
 	vow.Stop()
 	for _, cmd := range vow.cmds {
+		cmd.cmd.Wait()
 		assert.True(t, cmd.cmd.ProcessState.Exited())
 	}
 }
