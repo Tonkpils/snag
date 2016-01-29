@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,14 @@ func TestThen(t *testing.T) {
 	assert.Len(t, vow.cmds, totalCmds+2)
 }
 
+func TestThenAsync(t *testing.T) {
+	var vow Vow
+	vow.ThenAsync("foo", "bar", "baz")
+
+	require.Len(t, vow.cmds, 1)
+	assert.True(t, vow.cmds[0].async)
+}
+
 func TestStop(t *testing.T) {
 	vow := To(echoScript)
 	for i := 0; i < 50; i++ {
@@ -59,6 +68,19 @@ func TestStop(t *testing.T) {
 
 	r := <-result
 	assert.False(t, r)
+}
+
+func TestStopAsync(t *testing.T) {
+	vow := To(echoScript)
+	vow.ThenAsync(echoScript)
+
+	require.True(t, vow.Exec(ioutil.Discard))
+	<-time.After(10 * time.Millisecond)
+
+	vow.Stop()
+	for _, cmd := range vow.cmds {
+		assert.True(t, cmd.cmd.ProcessState.Exited())
+	}
 }
 
 func TestExec(t *testing.T) {

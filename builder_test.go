@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,22 +10,27 @@ import (
 )
 
 func TestNewBuilder(t *testing.T) {
-	b, err := NewBuilder(config{})
-	assert.NoError(t, err)
-	assert.NotNil(t, b)
-}
-
-func TestNewBuilder_EnvScript(t *testing.T) {
 	testEnv := "foobar"
 	os.Setenv("TEST_ENV", testEnv)
-	b, err := NewBuilder(config{
-		Build: []string{"echo $$TEST_ENV"},
-	})
+	c := config{
+		Build:        []string{"echo Hello World", "echo $$TEST_ENV"},
+		Run:          []string{"echo async here"},
+		IgnoredItems: []string{"foo", "bar"},
+		Verbose:      true,
+	}
+	b, err := NewBuilder(c)
 	assert.NoError(t, err)
 	assert.NotNil(t, b)
 
-	require.Len(t, b.buildCmds, 1)
-	assert.Equal(t, testEnv, b.buildCmds[0][1])
+	require.Len(t, b.buildCmds, 2)
+	assert.Equal(t, c.Build[0], strings.Join(b.buildCmds[0], " "))
+	assert.Equal(t, testEnv, b.buildCmds[1][1])
+
+	require.Len(t, b.runCmds, 1)
+	assert.Equal(t, c.Run[0], strings.Join(b.runCmds[0], " "))
+
+	assert.Equal(t, c.Verbose, b.verbose)
+	assert.Equal(t, c.IgnoredItems, b.ignoredItems)
 }
 
 func TestClose(t *testing.T) {
