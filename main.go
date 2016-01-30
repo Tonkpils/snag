@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"log"
 	"os"
@@ -57,7 +56,8 @@ func handleSubCommand(cmd string) error {
 	case "init":
 		return initSnag()
 	default:
-		return errors.New("invalid command")
+		flag.Usage()
+		return nil
 	}
 }
 

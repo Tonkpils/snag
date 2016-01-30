@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 var (
@@ -15,6 +16,20 @@ func init() {
 	flag.Var(&cliCmds, "c", "List of commands to execute")
 	flag.BoolVar(&verbose, "v", false, "Verbose output")
 	flag.BoolVar(&version, "version", false, "display snag's version")
+
+	flag.Usage = func() {
+		usage := `Usage of %s:
+    %s [COMMAND]
+
+Commands:
+
+    init    Generate a snag file %q used for configuration and execution
+
+Flags:
+`
+		fmt.Fprintf(os.Stderr, usage, os.Args[0], os.Args[0], SnagFile)
+		flag.PrintDefaults()
+	}
 }
 
 type argSlice []string
