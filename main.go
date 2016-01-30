@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 )
@@ -12,10 +11,15 @@ const (
 	VersionOutput = "Snag version " + Version
 )
 
+func init() {
+	log.SetOutput(os.Stdout)
+	log.SetFlags(0)
+}
+
 func main() {
 	flag.Parse()
 	if version {
-		fmt.Println(VersionOutput)
+		log.Println(VersionOutput)
 		return
 	}
 
