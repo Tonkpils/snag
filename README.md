@@ -30,37 +30,44 @@ $ go get github.com/Tonkpils/snag
 
 ## Usage
 
-Snag works by reading a yaml file named `.snag.yml`. It allows you to configure what snag will
-run and what it should ignore. The file **must** reside in the same
-directory that you want to watch.
+Once snag is installed, use:
 
-Here is a sample of a `.snag.yml` file:
+```sh
+snag init
+```
+
+This will generate the snag file `.snag.yml`.
+Here is a sample of the snag file:
 
 ```yaml
-script:
-  - echo "hello world"
-  - go test
+verbose: true
 ignore:
   - .git
   - "**.ext"
   - "foo/**/bar.sh"
-verbose: true
+build:
+  - echo "hello world"
+  - go test
 ```
+
+Snag works by reading the snag file allowing you to configure what and how
+commands will be executed.
+The file **must** reside in the same directory that you want to watch.
 
 By default, snag will watch all files/folders within the current directory recursively.
 The ignore section will tell snag to ignore any changes that happen
 to the directories/files listed. The ignore section uses the same pattern matching
 that [gitignore](https://www.kernel.org/pub/software/scm/git/docs/gitignore.html) uses.
 
-The script section of the file will be executed when any file is created, deleted, or modified.
+The build section of the file will be executed when any file is created, deleted, or modified.
 
-Simply run:
+Once configured, use:
 
 ```
 snag
 ```
 
-From a project with a `.snag.yml` file and develop away!
+From a project with a snag file and develop away!
 
 ### Quick Use
 
@@ -93,7 +100,7 @@ exists in the current working directory.
 You can access your shell's environment variables by using `$$`.
 
 ```yaml
-script:
+build:
   - echo $$MY_VAR
   - rm -rf $$OUTPUT_DIR
 ```
@@ -102,9 +109,11 @@ script:
 
 ### Endless build loops
 
-Snag will run your configured scripts if **ANY** file modifed in your current directory.
-If you scripts generate any files, you should add them to the `ignore` section in your
-`.snag.yml` to avoid an endless build loop.
+Snag will run your configured commands when **ANY** file, not ignored,
+is modifed in your current directory.
+If your commands generate any files within the watched directory,
+you must add them to the `ignore` section in your
+snag file to avoid an endless build loop.
 
 ### Trouble running shell scripts
 
@@ -116,20 +125,20 @@ i.e.
 Running a script with a shebang
 
 ```yaml
-scripts:
+build:
   - ./my-script
 ```
 
 Running a script **without** a shebang
 
 ```yaml
-scripts:
+build:
   - bash my-script
 ```
 
 ### Ignore Pattern Matching
 
-If you want to use asterisks in the ignore section of you snag.yml,
+If you want to use asterisks in the ignore section of your snag file,
 you need to make sure to wrap them in quotes or you may run into an
 error like:
 

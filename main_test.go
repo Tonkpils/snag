@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"io/ioutil"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -31,7 +33,7 @@ func TestParseConfig_NoSnagFile(t *testing.T) {
 
 	_, err := parseConfig()
 	require.Error(t, err)
-	assert.Equal(t, "Could not find '.snag.yml' in your current directory", err.Error())
+	assert.Equal(t, `could not find ".snag.yml" in your current directory`, err.Error())
 }
 
 func TestParseConfig_FunkyYml(t *testing.T) {
@@ -44,7 +46,7 @@ func TestParseConfig_FunkyYml(t *testing.T) {
 	writeSnagFile(t, "I like to thing I'm yaml")
 	_, err := parseConfig()
 	require.Error(t, err)
-	rx := regexp.MustCompile(`^Could not parse yml file\. .+`)
+	rx := regexp.MustCompile(`^could not parse snag file: .+`)
 	assert.Regexp(t, rx, err.Error())
 }
 
@@ -58,7 +60,7 @@ func TestParseConfig_ScriptAndBuild(t *testing.T) {
 	writeSnagFile(t, "verbose: true\nbuild:\n  - echo 'hello'\nscript:\n  - echo 'hello'")
 	_, err := parseConfig()
 	require.Error(t, err)
-	assert.Equal(t, "Cannot use 'script' and 'build' together. The 'script' tag is deprecated, please use 'build' instead.", err.Error())
+	assert.Equal(t, "cannot use 'script' and 'build' together. The 'script' tag is deprecated, please use 'build' instead.", err.Error())
 }
 
 func TestParseConfig_Script(t *testing.T) {
@@ -84,7 +86,7 @@ func TestParseConfig_EmptyBuild(t *testing.T) {
 	writeSnagFile(t, "verbose: true")
 	_, err := parseConfig()
 	require.Error(t, err)
-	assert.Equal(t, "You must specify at least 1 command.", err.Error())
+	assert.Equal(t, "you must specify at least 1 command.", err.Error())
 }
 
 func TestParseConfig_Verbose(t *testing.T) {
@@ -101,6 +103,33 @@ func TestParseConfig_Verbose(t *testing.T) {
 	c, err := parseConfig()
 	require.NoError(t, err)
 	assert.True(t, c.Verbose, "verbosity was not set correctly")
+}
+
+func TestSnagInit(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	log.SetOutput(buf)
+	defer log.SetOutput(os.Stdout)
+
+	wd, tmpDir := tmpDirectory(t)
+	defer os.RemoveAll(tmpDir)
+
+	chdir(t, tmpDir)
+	defer os.Chdir(wd)
+
+	_, err := os.Stat(SnagFile)
+	assert.True(t, os.IsNotExist(err))
+
+	err = initSnag()
+	require.NoError(t, err)
+
+	assert.Contains(t, buf.String(), "Success")
+
+	_, err = os.Stat(SnagFile)
+	require.NoError(t, err)
+
+	err = initSnag()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "file already exists")
 }
 
 func chdir(t *testing.T, path string) {

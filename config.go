@@ -25,20 +25,20 @@ func parseConfig() (config, error) {
 
 	// if build phase is still empty try and find the snag.yml file
 	if len(c.Build) == 0 {
-		in, err := ioutil.ReadFile(".snag.yml")
+		in, err := ioutil.ReadFile(SnagFile)
 		if err != nil {
-			return c, errors.New("Could not find '.snag.yml' in your current directory")
+			return c, fmt.Errorf("could not find %q in your current directory", SnagFile)
 		}
 
 		if err := yaml.Unmarshal(in, &c); err != nil {
-			return c, fmt.Errorf("Could not parse yml file. %s\n", err)
+			return c, fmt.Errorf("could not parse snag file: %s\n", err)
 		}
 	}
 
 	// if both script and build are specified
 	// blow up and tell the user to use build
 	if len(c.Script) != 0 && len(c.Build) != 0 {
-		return c, errors.New("Cannot use 'script' and 'build' together. The 'script' tag is deprecated, please use 'build' instead.")
+		return c, errors.New("cannot use 'script' and 'build' together. The 'script' tag is deprecated, please use 'build' instead.")
 	}
 
 	// if script has something, tell the user it's deprecated
@@ -49,7 +49,7 @@ func parseConfig() (config, error) {
 	}
 
 	if len(c.Build) == 0 {
-		return c, errors.New("You must specify at least 1 command.")
+		return c, errors.New("you must specify at least 1 command.")
 	}
 
 	c.Verbose = verbose || c.Verbose
