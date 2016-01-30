@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -62,6 +63,10 @@ func handleSubCommand(cmd string) error {
 }
 
 func initSnag() error {
+	if _, err := os.Stat(SnagFile); err == nil {
+		return errors.New("snag file already exists")
+	}
+
 	f, err := os.Create(SnagFile)
 	if err != nil {
 		return err
