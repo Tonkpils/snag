@@ -29,6 +29,7 @@ func main() {
 	}
 
 	if version {
+		log.Println("The 'version' flag is deprecated. Use 'snag version'")
 		log.Println(VersionOutput)
 		return
 	}
@@ -56,6 +57,9 @@ func handleSubCommand(cmd string) error {
 	switch flag.Arg(0) {
 	case "init":
 		return initSnag()
+	case "version":
+		log.Println(VersionOutput)
+		return nil
 	default:
 		flag.Usage()
 		return nil

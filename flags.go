@@ -15,7 +15,7 @@ var (
 func init() {
 	flag.Var(&cliCmds, "c", "List of commands to execute")
 	flag.BoolVar(&verbose, "v", false, "Verbose output")
-	flag.BoolVar(&version, "version", false, "display snag's version")
+	flag.BoolVar(&version, "version", false, "[DEPRECATED: use 'snag version'] display snag's version")
 
 	flag.Usage = func() {
 		usage := `Usage of %s:
@@ -23,7 +23,8 @@ func init() {
 
 Commands:
 
-    init    Generate a snag file %q used for configuration and execution
+    init    	Generate a snag file %q used for configuration and execution
+    version 	Display snag's version
 
 Flags:
 `
