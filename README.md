@@ -46,8 +46,8 @@ ignore:
   - "**.ext"
   - "foo/**/bar.sh"
 build:
-  - echo "hello world"
-  - go test
+  - echo "lint code"
+  - echo "test code"
 ```
 
 Snag works by reading the snag file allowing you to configure what and how
