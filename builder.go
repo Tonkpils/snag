@@ -28,7 +28,8 @@ type Bob struct {
 	watchDir string
 
 	depWarning   string
-	cmds         [][]string
+	buildCmds    [][]string
+	runCmds      [][]string
 	ignoredItems []string
 
 	verbose bool
@@ -40,21 +41,32 @@ func NewBuilder(c config) (*Bob, error) {
 		return nil, err
 	}
 
-	cmds := make([][]string, len(c.Build))
-	for i, s := range c.Build {
-		cmds[i] = strings.Split(s, " ")
+	parseCmd := func(cmd string) []string {
+		c := strings.Split(cmd, " ")
 
 		// check for environment variables inside script
-		if strings.Contains(s, "$$") {
-			replaceEnv(cmds[i])
+		if strings.Contains(cmd, "$$") {
+			replaceEnv(c)
 		}
+		return c
+	}
+
+	buildCmds := make([][]string, len(c.Build))
+	for i, s := range c.Build {
+		buildCmds[i] = parseCmd(s)
+	}
+
+	runCmds := make([][]string, len(c.Run))
+	for i, s := range c.Run {
+		runCmds[i] = parseCmd(s)
 	}
 
 	return &Bob{
 		w:            w,
 		done:         make(chan struct{}),
 		watching:     map[string]struct{}{},
-		cmds:         cmds,
+		buildCmds:    buildCmds,
+		runCmds:      runCmds,
 		depWarning:   c.DepWarnning,
 		ignoredItems: c.IgnoredItems,
 		verbose:      c.Verbose,
@@ -153,13 +165,19 @@ func (b *Bob) execute() {
 	}
 
 	// setup the first command
-	firstCmd := b.cmds[0]
+	firstCmd := b.buildCmds[0]
 	b.curVow = vow.To(firstCmd[0], firstCmd[1:]...)
 
 	// setup the remaining commands
-	for i := 1; i < len(b.cmds); i++ {
-		cmd := b.cmds[i]
+	for i := 1; i < len(b.buildCmds); i++ {
+		cmd := b.buildCmds[i]
 		b.curVow = b.curVow.Then(cmd[0], cmd[1:]...)
+	}
+
+	// setup all parallel commands
+	for i := 0; i < len(b.runCmds); i++ {
+		cmd := b.runCmds[i]
+		b.curVow = b.curVow.ThenAsync(cmd[0], cmd[1:]...)
 	}
 	b.curVow.Verbose = b.verbose
 	go b.curVow.Exec(ansicolor.NewAnsiColorWriter(os.Stdout))
