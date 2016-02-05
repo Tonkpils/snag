@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/gizak/termui"
 )
 
 var errKilled = errors.New("promise has already been killed")
@@ -60,6 +62,7 @@ func (sb *syncBuffer) Bytes() []byte {
 }
 
 type promise struct {
+	Name   string
 	cmdMtx sync.Mutex
 	cmd    *exec.Cmd
 	async  bool
@@ -68,6 +71,7 @@ type promise struct {
 
 func newPromise(name string, args ...string) *promise {
 	return &promise{
+		Name:   fmt.Sprintf("%s %s", name, strings.Join(args, " ")),
 		cmd:    exec.Command(name, args...),
 		killed: new(int32),
 	}
@@ -79,7 +83,7 @@ func newAsyncPromise(name string, args ...string) *promise {
 	return p
 }
 
-func (p *promise) Run(w io.Writer, verbose bool) (err error) {
+func (p *promise) Run(w io.Writer, ls *termui.List, verbose bool) (err error) {
 	if p.isKilled() {
 		return errKilled
 	}
@@ -88,18 +92,11 @@ func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 	p.cmd.Stdout = buf
 	p.cmd.Stderr = buf
 
-	fmt.Fprintf(
-		w,
-		"%s %s",
-		statusInProgress,
-		strings.Join(p.cmd.Args, " "),
-	)
-
 	p.cmdMtx.Lock()
 	if err := p.cmd.Start(); err != nil {
 		p.cmdMtx.Unlock()
-		p.writeIfAlive(w, []byte(statusFailed))
-		p.writeIfAlive(w, []byte(err.Error()+"\n"))
+		// p.writeIfAlive(w, []byte(statusFailed))
+		// p.writeIfAlive(w, []byte(err.Error()+"\n"))
 		return err
 	}
 	p.cmdMtx.Unlock()
@@ -130,10 +127,10 @@ func (p *promise) wait(w io.Writer, verbose bool, buf *syncBuffer) error {
 		status = fmt.Sprintf("%s %s\n", status, strings.Join(p.cmd.Args, " "))
 	}
 
-	p.writeIfAlive(w, []byte(status))
+	// p.writeIfAlive(w, []byte(status))
 
 	if verbose || err != nil {
-		p.writeIfAlive(w, buf.Bytes())
+		// p.writeIfAlive(w, buf.Bytes())
 	}
 
 	return err

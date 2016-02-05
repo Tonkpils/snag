@@ -12,14 +12,11 @@ import (
 	"time"
 
 	"github.com/Tonkpils/snag/vow"
-	"github.com/shiena/ansicolor"
+	"github.com/gizak/termui"
 	fsn "gopkg.in/fsnotify.v1"
 )
 
 var mtimes = map[string]time.Time{}
-var clearBuffer = func() {
-	fmt.Print("\033c")
-}
 
 type Bob struct {
 	w        *fsn.Watcher
@@ -195,23 +192,36 @@ func (b *Bob) stopCurVow() {
 
 func (b *Bob) execute() {
 	b.stopCurVow()
-
-	clearBuffer()
 	b.mtx.Lock()
 
 	if len(b.depWarning) > 0 {
 		fmt.Printf("Deprecation Warnings!\n%s", b.depWarning)
 	}
 
+	ls := termui.NewList()
+	ls.ItemFgColor = termui.ColorRed
+	ls.BorderLabel = "Snag"
+	// TODO figure out how to set this up dynamically
+	ls.Height = 10
+	ls.Width = 100
+	ls.Y = 0
+
 	// setup the first command
 	firstCmd := b.buildCmds[0]
+	strs := []string{
+		fmt.Sprintf("[0] %s %s", firstCmd[0], strings.Join(firstCmd[1:], " ")),
+	}
 	b.curVow = vow.To(firstCmd[0], firstCmd[1:]...)
 
 	// setup the remaining commands
 	for i := 1; i < len(b.buildCmds); i++ {
 		cmd := b.buildCmds[i]
+		strs = append(strs, fmt.Sprintf("[%d] %s %s", i, cmd[0], strings.Join(cmd[1:], " ")))
 		b.curVow = b.curVow.Then(cmd[0], cmd[1:]...)
 	}
+
+	ls.Items = strs
+	termui.Render(ls)
 
 	// setup all parallel commands
 	for i := 0; i < len(b.runCmds); i++ {
@@ -219,7 +229,7 @@ func (b *Bob) execute() {
 		b.curVow = b.curVow.ThenAsync(cmd[0], cmd[1:]...)
 	}
 	b.curVow.Verbose = b.verbose
-	go b.curVow.Exec(ansicolor.NewAnsiColorWriter(os.Stdout))
+	go b.curVow.Exec(ls)
 
 	b.mtx.Unlock()
 }

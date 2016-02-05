@@ -5,6 +5,8 @@ import (
 	"flag"
 	"log"
 	"os"
+
+	"github.com/gizak/termui"
 )
 
 const (
@@ -20,6 +22,12 @@ func init() {
 }
 
 func main() {
+	err := termui.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer termui.Close()
+
 	flag.Parse()
 	if flag.NArg() > 0 {
 		if err := handleSubCommand(flag.Arg(0)); err != nil {
@@ -50,7 +58,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	b.Watch(wd)
+	go b.Watch(wd)
+
+	termui.Handle("/sys/kbd/q", func(termui.Event) {
+		termui.StopLoop()
+	})
+
+	termui.Handle("/sys/kbd/C-x", func(termui.Event) {
+		termui.StopLoop()
+	})
+
+	termui.Loop()
+
+	b.Close()
 }
 
 func handleSubCommand(cmd string) error {

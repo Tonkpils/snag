@@ -5,8 +5,11 @@ a batch of external commands
 package vow
 
 import (
+	"fmt"
 	"io"
 	"sync/atomic"
+
+	"github.com/gizak/termui"
 )
 
 // Vow represents a batch of commands being prepared to run
@@ -50,15 +53,24 @@ func (vow *Vow) isCanceled() bool {
 
 // Exec runs all of the commands a Vow has with all output redirected
 // to the given writer and returns a Result
-func (vow *Vow) Exec(w io.Writer) bool {
+func (vow *Vow) Exec(ls *termui.List) bool {
 	for i := 0; i < len(vow.cmds); i++ {
 		if vow.isCanceled() {
 			return false
 		}
 
-		if err := vow.cmds[i].Run(w, vow.Verbose); err != nil {
+		cmd := vow.cmds[i]
+		ls.Items[i] = fmt.Sprintf("[[%d] %s](fg-yellow)", i, cmd.Name)
+		go termui.Render(ls)
+
+		var w io.Writer
+		if err := cmd.Run(w, ls, vow.Verbose); err != nil {
+			ls.Items[i] = fmt.Sprintf("[[%d] %s](fg-red)", i, cmd.Name)
+			go termui.Render(ls)
 			return false
 		}
+		ls.Items[i] = fmt.Sprintf("[[%d] %s](fg-green)", i, cmd.Name)
+		go termui.Render(ls)
 	}
 	return true
 }
