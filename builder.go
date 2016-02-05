@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,8 +9,8 @@ import (
 	"time"
 
 	"github.com/Tonkpils/snag/vow"
+	"github.com/rjeczalik/notify"
 	"github.com/shiena/ansicolor"
-	fsn "gopkg.in/fsnotify.v1"
 )
 
 var mtimes = map[string]time.Time{}
@@ -20,11 +19,9 @@ var clearBuffer = func() {
 }
 
 type Bob struct {
-	w        *fsn.Watcher
 	mtx      sync.RWMutex
 	curVow   *vow.Vow
 	done     chan struct{}
-	watching map[string]struct{}
 	watchDir string
 
 	depWarning   string
@@ -36,11 +33,6 @@ type Bob struct {
 }
 
 func NewBuilder(c config) (*Bob, error) {
-	w, err := fsn.NewWatcher()
-	if err != nil {
-		return nil, err
-	}
-
 	parseCmd := func(cmd string) []string {
 		c := strings.Split(cmd, " ")
 
@@ -62,9 +54,7 @@ func NewBuilder(c config) (*Bob, error) {
 	}
 
 	return &Bob{
-		w:            w,
 		done:         make(chan struct{}),
-		watching:     map[string]struct{}{},
 		buildCmds:    buildCmds,
 		runCmds:      runCmds,
 		depWarning:   c.DepWarnning,
@@ -83,48 +73,42 @@ func replaceEnv(cmds []string) {
 	}
 }
 
-func (b *Bob) Close() error {
+func (b *Bob) Close() {
 	close(b.done)
-	return b.w.Close()
 }
 
 func (b *Bob) Watch(path string) error {
 	b.watchDir = path
-	// this can never return false since we will always
-	// have at least one file in the directory (.snag.yml)
-	_ = b.watch(path)
+
 	b.execute()
 
+	// Make the channel buffered to ensure no event is dropped. Notify will drop
+	// an event if the receiver is not able to keep up the sending pace.
+	c := make(chan notify.EventInfo, 1)
+
+	// Set up a watchpoint listening on events within current working directory.
+	// Dispatch all events to c
+	if err := notify.Watch(".", c, notify.All); err != nil {
+		return err
+	}
+	defer notify.Stop(c)
+
+	// Block until an event is received or builder is closed
 	for {
 		select {
-		case ev := <-b.w.Events:
-			var queueBuild bool
-			switch {
-			case isCreate(ev.Op):
-				queueBuild = b.watch(ev.Name)
-			case isDelete(ev.Op):
-				if _, ok := b.watching[ev.Name]; ok {
-					b.w.Remove(ev.Name)
-					delete(b.watching, ev.Name)
-				}
-				queueBuild = true
-			case isModify(ev.Op):
-				queueBuild = true
+		case ev := <-c:
+			if b.shouldQueue(ev.Path()) {
+				b.execute()
 			}
-			if queueBuild {
-				b.maybeQueue(ev.Name)
-			}
-		case err := <-b.w.Errors:
-			log.Println("error:", err)
 		case <-b.done:
 			return nil
 		}
 	}
 }
 
-func (b *Bob) maybeQueue(path string) {
+func (b *Bob) shouldQueue(path string) bool {
 	if b.isExcluded(path) {
-		return
+		return false
 	}
 
 	stat, err := os.Stat(path)
@@ -132,8 +116,7 @@ func (b *Bob) maybeQueue(path string) {
 		// we couldn't find the file
 		// most likely a deletion
 		delete(mtimes, path)
-		b.execute()
-		return
+		return true
 	}
 
 	mtime := stat.ModTime()
@@ -142,8 +125,10 @@ func (b *Bob) maybeQueue(path string) {
 		// the file has been modified and the
 		// file system event wasn't bogus
 		mtimes[path] = mtime
-		b.execute()
+		return true
 	}
+
+	return false
 }
 
 func (b *Bob) stopCurVow() {
@@ -185,35 +170,6 @@ func (b *Bob) execute() {
 	b.mtx.Unlock()
 }
 
-func (b *Bob) watch(path string) bool {
-	var shouldBuild bool
-	if _, ok := b.watching[path]; ok {
-		return false
-	}
-	filepath.Walk(path, func(p string, fi os.FileInfo, err error) error {
-		if fi == nil {
-			return filepath.SkipDir
-		}
-
-		if !fi.IsDir() {
-			shouldBuild = true
-			return nil
-		}
-
-		if b.isExcluded(p) {
-			return filepath.SkipDir
-		}
-
-		if err := b.w.Add(p); err != nil {
-			return err
-		}
-		b.watching[p] = struct{}{}
-
-		return nil
-	})
-	return shouldBuild
-}
-
 func (b *Bob) isExcluded(path string) bool {
 	// get the relative path
 	path = strings.TrimPrefix(path, b.watchDir+string(filepath.Separator))
@@ -224,17 +180,4 @@ func (b *Bob) isExcluded(path string) bool {
 		}
 	}
 	return false
-}
-
-func isCreate(op fsn.Op) bool {
-	return op&fsn.Create == fsn.Create
-}
-
-func isDelete(op fsn.Op) bool {
-	return op&fsn.Remove == fsn.Remove
-}
-
-func isModify(op fsn.Op) bool {
-	return op&fsn.Write == fsn.Write ||
-		op&fsn.Rename == fsn.Rename
 }
