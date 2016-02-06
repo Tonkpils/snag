@@ -20,7 +20,12 @@ install:
 script:
   # define our own packages so that go does not
   # try and build our vendored deps
-  - pkgs=(. ./vow)
+  - |
+    pkgs=()
+    while read -r line; do
+      pkgs+=("$line")
+    done <<< "$(go list ./... | grep -v 'vendor')"
+
   # ensure everything is formatted all pretty like
   - if gofmt -l -s . | grep -v 'vendor/'; then exit 1; fi
   # vet out possible issues
