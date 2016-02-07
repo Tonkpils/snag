@@ -1,9 +1,11 @@
 language: go
 
 go:
-  - 1.4
   - 1.5
   - tip
+
+env:
+  - GO15VENDOREXPERIMENT=1
 
 before_install:
   - go get github.com/golang/lint/golint
@@ -11,25 +13,30 @@ before_install:
   - go get github.com/fzipp/gocyclo
   - go get github.com/mattn/goveralls
 
-  # get our dependencies
-  - go get -t ./...
-
 install:
   # make sure stuff actually builds
   - go build
 
 script:
+  # define our own packages so that go does not
+  # try and build our vendored deps
+  - |
+    pkgs=()
+    while read -r line; do
+      pkgs+=("$line")
+    done <<< "$(go list ./... | grep -v 'vendor')"
+
   # ensure everything is formatted all pretty like
-  - gofmt -l -s .
+  - if gofmt -l -s . | grep -v 'vendor/'; then exit 1; fi
   # vet out possible issues
-  - go vet ./...
+  - go vet ${pkgs[@]}
   # run tests
-  - go test ./... -v -race
+  - go test ${pkgs[@]} -v -race
 
 after_success:
   - |
     echo "mode: count" > profile.cov
-    for dir in $(find . -maxdepth 10 -not -path './.git*' -not -path '*/_*' -type d);
+    for dir in $(find . -maxdepth 10 -not -path 'vendor' -not -path './.git*' -not -path '*/_*' -type d);
     do
     if ls $dir/*.go &> /dev/null; then
       go test -short -covermode=count -coverprofile=$dir/profile.tmp $dir
@@ -45,9 +52,9 @@ after_success:
 
 after_script:
   # check possible styling errors
-  - golint ./...
-  # check for potentially complex functions but don't false build
-  - gocyclo -over 15 . || true
+  - for pkg in ${pkgs[@]}; do; golint $pkg; done
+  # check for potentially complex functions but don't fail build
+  - gocyclo -over 15 . | grep -v 'vendor/' || true
   # refresh godocs in case there were api changes
   - |
     if [[ "$TRAVIS_PULL_REQUEST" == "false" ]] && [[ "$TRAVIS_BRANCH" == "master" ]]; then
