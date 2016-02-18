@@ -34,32 +34,52 @@ func TestNewBuilder(t *testing.T) {
 }
 
 func TestNewBuilder_CmdWithQuotes(t *testing.T) {
-	c := config{
-		Build: []string{
-			`echo "hello world" foo`,
-			`echo "ga ga oh la la`,
-			`echo "ga" "foo"`,
-			`echo -c 'foo "bar"'`,
+	tests := []struct {
+		Command string
+		Chunks  []string
+	}{
+		{ // one single quote pair
+			Command: `echo 'hello world' foo`,
+			Chunks:  []string{`echo`, `'hello world'`, `foo`},
+		},
+		{ // one double quote pair
+			Command: `echo "hello world" foo`,
+			Chunks:  []string{`echo`, `"hello world"`, `foo`},
+		},
+		{ // no ending double quote
+			Command: `echo "ga ga oh la la`,
+			Chunks:  []string{`echo`, `"ga ga oh la la`},
+		},
+		{ // no ending single quote
+			Command: `echo 'ga ga oh la la`,
+			Chunks:  []string{`echo`, `'ga ga oh la la`},
+		},
+		{ // multiple double quotes
+			Command: `echo "ga" "foo"`,
+			Chunks:  []string{`echo`, `"ga"`, `"foo"`},
+		},
+		{ // double quotes inside single quotes
+			Command: `echo -c 'foo "bar"'`,
+			Chunks:  []string{`echo`, `-c`, `'foo "bar"'`},
+		},
+		{ // single quotes inside double quotes
+			Command: `echo -c "foo 'bar'"`,
+			Chunks:  []string{`echo`, `-c`, `"foo 'bar'"`},
 		},
 	}
 
-	b, err := NewBuilder(c)
-	assert.NoError(t, err)
+	for _, test := range tests {
+		c := config{
+			Build: []string{test.Command},
+			Run:   []string{test.Command},
+		}
 
-	assert.Equal(t, "echo", b.buildCmds[0][0])
-	assert.Equal(t, `"hello world"`, b.buildCmds[0][1])
-	assert.Equal(t, "foo", b.buildCmds[0][2])
+		b, err := NewBuilder(c)
+		require.NoError(t, err)
 
-	assert.Equal(t, "echo", b.buildCmds[1][0])
-	assert.Equal(t, `"ga ga oh la la`, b.buildCmds[1][1])
-
-	assert.Equal(t, "echo", b.buildCmds[2][0])
-	assert.Equal(t, `"ga"`, b.buildCmds[2][1])
-	assert.Equal(t, `"foo"`, b.buildCmds[2][2])
-
-	assert.Equal(t, "echo", b.buildCmds[3][0])
-	assert.Equal(t, `-c`, b.buildCmds[3][1])
-	assert.Equal(t, `'foo "bar"'`, b.buildCmds[3][2])
+		assert.Equal(t, test.Chunks, b.buildCmds[0])
+		assert.Equal(t, test.Chunks, b.runCmds[0])
+	}
 }
 
 func TestClose(t *testing.T) {
