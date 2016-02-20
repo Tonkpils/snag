@@ -1,5 +1,3 @@
-# Change log
-
 Snag follows [semantic versioning](http://semver.org/).
 
 ----------------
