@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -41,8 +43,12 @@ func NewBuilder(c config) (*Bob, error) {
 		return nil, err
 	}
 
-	parseCmd := func(cmd string) []string {
-		c := strings.Split(cmd, " ")
+	parseCmd := func(cmd string) (c []string) {
+		s := bufio.NewScanner(strings.NewReader(cmd))
+		s.Split(splitFunc)
+		for s.Scan() {
+			c = append(c, s.Text())
+		}
 
 		// check for environment variables inside script
 		if strings.Contains(cmd, "$$") {
@@ -71,6 +77,39 @@ func NewBuilder(c config) (*Bob, error) {
 		ignoredItems: c.IgnoredItems,
 		verbose:      c.Verbose,
 	}, nil
+}
+
+func splitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	advance, token, err = bufio.ScanWords(data, atEOF)
+	if err != nil {
+		return
+	}
+
+	if len(token) == 0 {
+		return
+	}
+
+	b := token[0]
+	if b != '"' && b != '\'' {
+		return
+	}
+
+	if token[len(token)-1] == b {
+		return
+	}
+
+	chunk := data[advance-1:]
+	i := bytes.IndexByte(chunk, b)
+	if i == -1 {
+		advance = len(data)
+		token = append(token, chunk...)
+		return
+	}
+
+	advance += i
+	token = append(token, chunk[:i+1]...)
+
+	return
 }
 
 func replaceEnv(cmds []string) {

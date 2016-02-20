@@ -33,6 +33,55 @@ func TestNewBuilder(t *testing.T) {
 	assert.Equal(t, c.IgnoredItems, b.ignoredItems)
 }
 
+func TestNewBuilder_CmdWithQuotes(t *testing.T) {
+	tests := []struct {
+		Command string
+		Chunks  []string
+	}{
+		{ // one single quote pair
+			Command: `echo 'hello world' foo`,
+			Chunks:  []string{`echo`, `'hello world'`, `foo`},
+		},
+		{ // one double quote pair
+			Command: `echo "hello world" foo`,
+			Chunks:  []string{`echo`, `"hello world"`, `foo`},
+		},
+		{ // no ending double quote
+			Command: `echo "ga ga oh la la`,
+			Chunks:  []string{`echo`, `"ga ga oh la la`},
+		},
+		{ // no ending single quote
+			Command: `echo 'ga ga oh la la`,
+			Chunks:  []string{`echo`, `'ga ga oh la la`},
+		},
+		{ // multiple double quotes
+			Command: `echo "ga" "foo"`,
+			Chunks:  []string{`echo`, `"ga"`, `"foo"`},
+		},
+		{ // double quotes inside single quotes
+			Command: `echo -c 'foo "bar"'`,
+			Chunks:  []string{`echo`, `-c`, `'foo "bar"'`},
+		},
+		{ // single quotes inside double quotes
+			Command: `echo -c "foo 'bar'"`,
+			Chunks:  []string{`echo`, `-c`, `"foo 'bar'"`},
+		},
+	}
+
+	for _, test := range tests {
+		c := config{
+			Build: []string{test.Command},
+			Run:   []string{test.Command},
+		}
+
+		b, err := NewBuilder(c)
+		require.NoError(t, err)
+
+		assert.Equal(t, test.Chunks, b.buildCmds[0])
+		assert.Equal(t, test.Chunks, b.runCmds[0])
+	}
+}
+
 func TestClose(t *testing.T) {
 	b, err := NewBuilder(config{})
 	require.NoError(t, err)
