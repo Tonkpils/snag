@@ -6,6 +6,8 @@ Snag follows [semantic versioning](http://semver.org/).
 
 **your contribution here**
 
+## [1.2.0](https://github.com/Tonkpils/snag/releases/tag/v1.2.0)
+
 * [#60](https://github.com/Tonkpils/snag/pull/60) setup travis and use go 1.6
 * [#59](https://github.com/Tonkpils/snag/pull/59) better parsing of quoted arguments
 * [#57](https://github.com/Tonkpils/snag/pull/57) vendor dependencies with Godeps/GO15VENDOREXPERIMENT
