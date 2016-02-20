@@ -6,6 +6,7 @@ Snag follows [semantic versioning](http://semver.org/).
 
 **your contribution here**
 
+* [#59](https://github.com/Tonkpils/snag/pull/59) better parsing of quoted arguments
 * [#57](https://github.com/Tonkpils/snag/pull/57) vendor dependencies with Godeps/GO15VENDOREXPERIMENT
 * [#53](https://github.com/Tonkpils/snag/pull/53) Add init command for a sample `.snag.yml`
 * [#50](https://github.com/Tonkpils/snag/pull/50) Add `run` section for parallel commands
