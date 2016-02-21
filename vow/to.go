@@ -64,7 +64,7 @@ func (vow *Vow) Exec(ls *termui.List) bool {
 		go termui.Render(ls)
 
 		var w io.Writer
-		if err := cmd.Run(w, ls, vow.Verbose); err != nil {
+		if err := cmd.Run(w, vow.Verbose); err != nil {
 			ls.Items[i] = fmt.Sprintf("[[%d] %s](fg-red)", i, cmd.Name)
 			go termui.Render(ls)
 			return false

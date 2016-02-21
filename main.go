@@ -22,12 +22,6 @@ func init() {
 }
 
 func main() {
-	err := termui.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer termui.Close()
-
 	flag.Parse()
 	if flag.NArg() > 0 {
 		if err := handleSubCommand(flag.Arg(0)); err != nil {
@@ -58,6 +52,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := termui.Init(); err != nil {
+		log.Fatal(err)
+	}
+	defer termui.Close()
+
 	go b.Watch(wd)
 
 	termui.Handle("/sys/kbd/q", func(termui.Event) {
@@ -69,8 +68,6 @@ func main() {
 	})
 
 	termui.Loop()
-
-	b.Close()
 }
 
 func handleSubCommand(cmd string) error {

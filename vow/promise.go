@@ -11,17 +11,9 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
-
-	"github.com/gizak/termui"
 )
 
 var errKilled = errors.New("promise has already been killed")
-
-var (
-	statusFailed     = "\r|" + red("Failed") + "     |\n"
-	statusPassed     = "\r|" + green("Passed") + "     |\n"
-	statusInProgress = "|" + yellow("In Progress") + "|"
-)
 
 type syncBuffer struct {
 	sync.RWMutex
@@ -83,7 +75,7 @@ func newAsyncPromise(name string, args ...string) *promise {
 	return p
 }
 
-func (p *promise) Run(w io.Writer, ls *termui.List, verbose bool) (err error) {
+func (p *promise) Run(w io.Writer, verbose bool) (err error) {
 	if p.isKilled() {
 		return errKilled
 	}
@@ -95,16 +87,15 @@ func (p *promise) Run(w io.Writer, ls *termui.List, verbose bool) (err error) {
 	p.cmdMtx.Lock()
 	if err := p.cmd.Start(); err != nil {
 		p.cmdMtx.Unlock()
-		// p.writeIfAlive(w, []byte(statusFailed))
-		// p.writeIfAlive(w, []byte(err.Error()+"\n"))
 		return err
 	}
 	p.cmdMtx.Unlock()
 
 	// if the process is async we don't need to do anything else
 	if p.async {
+		// TODO FIGURE THIS OUT...
 		fmt.Println(" -- process id: ", p.cmd.Process.Pid)
-		go p.fowardOutput(p.cmd.Process.Pid, w, buf)
+		go p.forwardOutput(p.cmd.Process.Pid, w, buf)
 		go p.wait(w, verbose, buf)
 		return nil
 	}
@@ -117,26 +108,16 @@ func (p *promise) wait(w io.Writer, verbose bool, buf *syncBuffer) error {
 	err := p.cmd.Wait()
 	p.cmdMtx.Unlock()
 
-	status := statusPassed
-	if err != nil {
-		status = statusFailed
-	}
-
 	if p.async {
-		status = status[1 : len(status)-1]
-		status = fmt.Sprintf("%s %s\n", status, strings.Join(p.cmd.Args, " "))
-	}
-
-	// p.writeIfAlive(w, []byte(status))
-
-	if verbose || err != nil {
-		// p.writeIfAlive(w, buf.Bytes())
+		// TODO: what are we doing here???
+		// status = status[1 : len(status)-1]
+		// status = fmt.Sprintf("%s %s\n", status, strings.Join(p.cmd.Args, " "))
 	}
 
 	return err
 }
 
-func (p *promise) fowardOutput(pid int, w io.Writer, buf *syncBuffer) {
+func (p *promise) forwardOutput(pid int, w io.Writer, buf *syncBuffer) {
 	prefix := []byte(yellow(fmt.Sprintf("pid %d : ", pid)))
 	for t := time.Tick(time.Second); !p.isKilled(); <-t {
 		b := buf.Next(1024)
