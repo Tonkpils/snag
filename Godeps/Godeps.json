@@ -6,21 +6,17 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "github.com/fatih/color",
-			"Comment": "v0.1-12-g9aae6aa",
-			"Rev": "9aae6aaa22315390f03959adca2c4d395b02fcef"
+			"ImportPath": "github.com/gizak/termui",
+			"Rev": "08a5d3f67b7d9ec87830ea39c48e570a1f18531f"
 		},
 		{
-			"ImportPath": "github.com/mattn/go-colorable",
-			"Rev": "4af63d73f5bea08b682ad2cd198b1e607afd6be0"
+			"ImportPath": "github.com/mattn/go-runewidth",
+			"Comment": "travisish-44-ge882a96",
+			"Rev": "e882a96ec18dd43fa283187b66af74497c9101c0"
 		},
 		{
-			"ImportPath": "github.com/mattn/go-isatty",
-			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
-		},
-		{
-			"ImportPath": "github.com/shiena/ansicolor",
-			"Rev": "a422bbe96644373c5753384a59d678f7d261ff10"
+			"ImportPath": "github.com/nsf/termbox-go",
+			"Rev": "362329b0aa6447eadd52edd8d660ec1dff470295"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
@@ -33,8 +29,8 @@
 			"Rev": "f5520455607c0233cb6d7b056f71b22c1d265ef1"
 		},
 		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "50c6bc5e4292a1d4e65c6e9be5f53be28bcbe28e"
+			"ImportPath": "golang.org/x/net/websocket",
+			"Rev": "5d0a0f8cd486626821d2ba44d471ab1c9271d38f"
 		},
 		{
 			"ImportPath": "gopkg.in/fsnotify.v1",
