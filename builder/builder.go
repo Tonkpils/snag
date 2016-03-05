@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/Tonkpils/snag/exchange"
-	"github.com/Tonkpils/snag/vow"
 	"github.com/shiena/ansicolor"
 )
 
@@ -30,7 +29,7 @@ type Builder struct {
 	depWarning string
 	buildCmds  [][]string
 	runCmds    [][]string
-	curVow     *vow.Vow
+	curVow     *vow
 
 	verbose bool
 }
@@ -131,7 +130,7 @@ func (b *Builder) Build(_ interface{}) {
 
 	// setup the first command
 	firstCmd := b.buildCmds[0]
-	b.curVow = vow.To(firstCmd[0], firstCmd[1:]...)
+	b.curVow = VowTo(firstCmd[0], firstCmd[1:]...)
 
 	// setup the remaining commands
 	for i := 1; i < len(b.buildCmds); i++ {
