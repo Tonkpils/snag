@@ -29,7 +29,7 @@ func (ex *Exchange) Listen(event string, fn func(interface{})) {
 func (ex *Exchange) Send(event string, data interface{}) {
 	ex.mtx.RLock()
 	for _, fn := range ex.queues[event] {
-		fn(data)
+		go fn(data)
 	}
 	ex.mtx.RUnlock()
 }
