@@ -5,6 +5,10 @@ import (
 	"flag"
 	"log"
 	"os"
+
+	"github.com/Tonkpils/snag/builder"
+	"github.com/Tonkpils/snag/exchange"
+	"github.com/Tonkpils/snag/watcher"
 )
 
 const (
@@ -39,18 +43,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	b, err := NewBuilder(c)
+	ex := exchange.New()
+
+	bc := builder.Config{
+		Build:      c.Build,
+		Run:        c.Run,
+		DepWarning: c.DepWarnning,
+		Verbose:    c.Verbose,
+	}
+	b := builder.New(ex, bc)
+	ex.Listen("rebuild", b.Build)
+
+	w, err := watcher.New(ex, c.IgnoredItems)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer b.Close()
 
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	b.Watch(wd)
+	w.Watch(wd)
 }
 
 func handleSubCommand(cmd string) error {
