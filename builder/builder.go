@@ -23,8 +23,12 @@ type Config struct {
 	Verbose    bool
 }
 
-type Builder struct {
-	ex         *exchange.Exchange
+type Builder interface {
+	Build(interface{})
+}
+
+type CmdBuilder struct {
+	ex         exchange.SendListener
 	mtx        sync.RWMutex
 	depWarning string
 	buildCmds  [][]string
@@ -34,7 +38,7 @@ type Builder struct {
 	verbose bool
 }
 
-func New(ex *exchange.Exchange, c Config) *Builder {
+func New(ex exchange.SendListener, c Config) Builder {
 	parseCmd := func(cmd string) (c []string) {
 		s := bufio.NewScanner(strings.NewReader(cmd))
 		s.Split(splitFunc)
@@ -59,7 +63,7 @@ func New(ex *exchange.Exchange, c Config) *Builder {
 		runCmds[i] = parseCmd(s)
 	}
 
-	return &Builder{
+	return &CmdBuilder{
 		buildCmds:  buildCmds,
 		runCmds:    runCmds,
 		depWarning: c.DepWarning,
@@ -110,7 +114,7 @@ func replaceEnv(cmds []string) {
 	}
 }
 
-func (b *Builder) stopCurVow() {
+func (b *CmdBuilder) stopCurVow() {
 	b.mtx.Lock()
 	if b.curVow != nil {
 		b.curVow.Stop()
@@ -118,7 +122,7 @@ func (b *Builder) stopCurVow() {
 	b.mtx.Unlock()
 }
 
-func (b *Builder) Build(_ interface{}) {
+func (b *CmdBuilder) Build(_ interface{}) {
 	b.stopCurVow()
 
 	clearBuffer()

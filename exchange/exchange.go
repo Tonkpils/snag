@@ -4,12 +4,17 @@ import "sync"
 
 type queue []func(interface{})
 
+type SendListener interface {
+	Listen(string, func(interface{}))
+	Send(string, interface{})
+}
+
 type Exchange struct {
 	mtx    sync.RWMutex
 	queues map[string]queue
 }
 
-func New() *Exchange {
+func New() SendListener {
 	return &Exchange{
 		queues: map[string]queue{},
 	}

@@ -13,8 +13,12 @@ import (
 
 const rebuild = "rebuild"
 
-type Watcher struct {
-	ex           *exchange.Exchange
+type Watcher interface {
+	Watch(string) error
+}
+
+type FSWatcher struct {
+	ex           exchange.SendListener
 	fsn          *fsn.Watcher
 	done         chan struct{}
 	mtimes       map[string]time.Time
@@ -23,13 +27,13 @@ type Watcher struct {
 	ignoredItems []string
 }
 
-func New(ex *exchange.Exchange, ignoredItems []string) (*Watcher, error) {
+func New(ex exchange.SendListener, ignoredItems []string) (Watcher, error) {
 	f, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Watcher{
+	return &FSWatcher{
 		ex:           ex,
 		fsn:          f,
 		ignoredItems: ignoredItems,
@@ -39,7 +43,7 @@ func New(ex *exchange.Exchange, ignoredItems []string) (*Watcher, error) {
 	}, nil
 }
 
-func (w *Watcher) Watch(path string) error {
+func (w *FSWatcher) Watch(path string) error {
 	w.watchDir = path
 	// this can never return false since we will always
 	// have at least one file in the directory (.snag.yml)
@@ -73,7 +77,7 @@ func (w *Watcher) Watch(path string) error {
 	}
 }
 
-func (w *Watcher) maybeQueue(path string) {
+func (w *FSWatcher) maybeQueue(path string) {
 	if w.isExcluded(path) {
 		return
 	}
@@ -97,7 +101,7 @@ func (w *Watcher) maybeQueue(path string) {
 	}
 }
 
-func (w *Watcher) watch(path string) bool {
+func (w *FSWatcher) watch(path string) bool {
 	var shouldBuild bool
 	if _, ok := w.watching[path]; ok {
 		return false
@@ -126,7 +130,7 @@ func (w *Watcher) watch(path string) bool {
 	return shouldBuild
 }
 
-func (w *Watcher) isExcluded(path string) bool {
+func (w *FSWatcher) isExcluded(path string) bool {
 	// get the relative path
 	path = strings.TrimPrefix(path, w.watchDir+string(filepath.Separator))
 
