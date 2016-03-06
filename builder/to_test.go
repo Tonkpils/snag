@@ -1,4 +1,4 @@
-package vow
+package builder
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ var (
 func TestTo(t *testing.T) {
 	cmd := "foo"
 	args := []string{"Hello", "Worlf!"}
-	vow := To(cmd, args...)
+	vow := VowTo(cmd, args...)
 	require.NotNil(t, vow)
 
 	assert.Len(t, vow.cmds, 1)
@@ -29,28 +29,28 @@ func TestTo(t *testing.T) {
 }
 
 func TestThen(t *testing.T) {
-	var vow Vow
+	var v vow
 	totalCmds := 10
 	for i := 0; i < totalCmds; i++ {
-		vow.Then("foo", "bar", "baz")
+		v.Then("foo", "bar", "baz")
 	}
-	vow.Then("foo").Then("another")
+	v.Then("foo").Then("another")
 
-	assert.Len(t, vow.cmds, totalCmds+2)
+	assert.Len(t, v.cmds, totalCmds+2)
 }
 
 func TestThenAsync(t *testing.T) {
-	var vow Vow
-	vow.ThenAsync("foo", "bar", "baz")
+	var v vow
+	v.ThenAsync("foo", "bar", "baz")
 
-	require.Len(t, vow.cmds, 1)
-	assert.True(t, vow.cmds[0].async)
+	require.Len(t, v.cmds, 1)
+	assert.True(t, v.cmds[0].async)
 }
 
 func TestStop(t *testing.T) {
-	vow := To(echoScript)
+	v := VowTo(echoScript)
 	for i := 0; i < 50; i++ {
-		vow = vow.Then(echoScript)
+		v = v.Then(echoScript)
 	}
 
 	result := make(chan bool)
@@ -59,26 +59,26 @@ func TestStop(t *testing.T) {
 	started := make(chan struct{})
 	go func() {
 		close(started)
-		result <- vow.Exec(ioutil.Discard)
+		result <- v.Exec(ioutil.Discard)
 	}()
 	<-started
 
-	vow.Stop()
-	assert.True(t, vow.isCanceled())
+	v.Stop()
+	assert.True(t, v.isCanceled())
 
 	r := <-result
 	assert.False(t, r)
 }
 
 func TestStopAsync(t *testing.T) {
-	vow := To(echoScript)
-	vow.ThenAsync(echoScript)
+	v := VowTo(echoScript)
+	v.ThenAsync(echoScript)
 
-	require.True(t, vow.Exec(ioutil.Discard))
+	require.True(t, v.Exec(ioutil.Discard))
 	<-time.After(10 * time.Millisecond)
 
-	vow.Stop()
-	for _, p := range vow.cmds {
+	v.Stop()
+	for _, p := range v.cmds {
 		p.cmdMtx.Lock()
 		p.cmd.Wait()
 		assert.True(t, p.cmd.ProcessState.Exited())
@@ -89,9 +89,9 @@ func TestStopAsync(t *testing.T) {
 func TestExec(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To(echoScript)
-	vow.Then(echoScript)
-	result := vow.Exec(&testBuf)
+	v := VowTo(echoScript)
+	v.Then(echoScript)
+	result := v.Exec(&testBuf)
 
 	e := fmt.Sprintf(
 		"%s %s%s%s %s%s",
@@ -109,10 +109,10 @@ func TestExec(t *testing.T) {
 func TestExecCmdNotFound(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To(echoScript)
-	vow.Then("asdfasdf", "asdas")
-	vow.Then("Shoud", "never", "happen")
-	result := vow.Exec(&testBuf)
+	v := VowTo(echoScript)
+	v.Then("asdfasdf", "asdas")
+	v.Then("Shoud", "never", "happen")
+	result := v.Exec(&testBuf)
 
 	e := fmt.Sprintf(
 		"%s %s%s%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in ",
@@ -130,10 +130,10 @@ func TestExecCmdNotFound(t *testing.T) {
 func TestExecCmdFailed(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To(echoScript)
-	vow.Then(failScript)
-	vow.Then("Shoud", "never", "happen")
-	result := vow.Exec(&testBuf)
+	v := VowTo(echoScript)
+	v.Then(failScript)
+	v.Then("Shoud", "never", "happen")
+	result := v.Exec(&testBuf)
 
 	e := fmt.Sprintf(
 		"%s %s%s%s %s%s",
@@ -152,9 +152,9 @@ func TestExecCmdFailed(t *testing.T) {
 func TestVowVerbose(t *testing.T) {
 	var testBuf bytes.Buffer
 
-	vow := To(echoScript)
-	vow.Verbose = true
-	result := vow.Exec(&testBuf)
+	v := VowTo(echoScript)
+	v.Verbose = true
+	result := v.Exec(&testBuf)
 	e := fmt.Sprintf(
 		"%s %s%shello\r\n",
 		statusInProgress,

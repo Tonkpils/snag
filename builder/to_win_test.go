@@ -1,6 +1,6 @@
 // +build windows
 
-package vow
+package builder
 
 func init() {
 	echoScript = `..\fixtures\echo.bat`
