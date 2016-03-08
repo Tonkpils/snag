@@ -7,39 +7,36 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Tonkpils/snag/exchange"
 	fsn "gopkg.in/fsnotify.v1"
 )
-
-const rebuild = "rebuild"
 
 type Watcher interface {
 	Watch(string) error
 }
 
 type FSWatcher struct {
-	ex           exchange.SendListener
 	fsn          *fsn.Watcher
 	done         chan struct{}
 	mtimes       map[string]time.Time
 	watching     map[string]struct{}
 	watchDir     string
 	ignoredItems []string
+	Event        chan struct{}
 }
 
-func New(ex exchange.SendListener, ignoredItems []string) (Watcher, error) {
+func New(ignoredItems []string) (*FSWatcher, error) {
 	f, err := fsn.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
 
 	return &FSWatcher{
-		ex:           ex,
 		fsn:          f,
 		ignoredItems: ignoredItems,
 		mtimes:       map[string]time.Time{},
 		done:         make(chan struct{}),
 		watching:     map[string]struct{}{},
+		Event:        make(chan struct{}),
 	}, nil
 }
 
@@ -48,7 +45,7 @@ func (w *FSWatcher) Watch(path string) error {
 	// this can never return false since we will always
 	// have at least one file in the directory (.snag.yml)
 	_ = w.watch(path)
-	w.ex.Send(rebuild, nil)
+	w.Event <- struct{}{}
 
 	for {
 		select {
@@ -87,7 +84,7 @@ func (w *FSWatcher) maybeQueue(path string) {
 		// we couldn't find the file
 		// most likely a deletion
 		delete(w.mtimes, path)
-		w.ex.Send(rebuild, nil)
+		w.Event <- struct{}{}
 		return
 	}
 
@@ -97,7 +94,7 @@ func (w *FSWatcher) maybeQueue(path string) {
 		// the file has been modified and the
 		// file system event wasn't bogus
 		w.mtimes[path] = mtime
-		w.ex.Send(rebuild, nil)
+		w.Event <- struct{}{}
 	}
 }
 

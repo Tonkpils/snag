@@ -43,6 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	rebuild := "rebuild"
 	ex := exchange.New()
 
 	bc := builder.Config{
@@ -51,10 +52,10 @@ func main() {
 		DepWarning: c.DepWarnning,
 		Verbose:    c.Verbose,
 	}
-	b := builder.New(ex, bc)
-	ex.Listen("rebuild", b.Build)
+	b := builder.New(bc)
+	ex.Listen(rebuild, b.Build)
 
-	w, err := watcher.New(ex, c.IgnoredItems)
+	w, err := watcher.New(c.IgnoredItems)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,6 +64,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	go func(w *watcher.FSWatcher) {
+		for range w.Event {
+			ex.Send(rebuild, nil)
+		}
+	}(w)
 
 	w.Watch(wd)
 }

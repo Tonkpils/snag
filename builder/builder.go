@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Tonkpils/snag/exchange"
 	"github.com/shiena/ansicolor"
 )
 
@@ -28,7 +27,6 @@ type Builder interface {
 }
 
 type CmdBuilder struct {
-	ex         exchange.SendListener
 	mtx        sync.RWMutex
 	depWarning string
 	buildCmds  [][]string
@@ -38,7 +36,7 @@ type CmdBuilder struct {
 	verbose bool
 }
 
-func New(ex exchange.SendListener, c Config) Builder {
+func New(c Config) Builder {
 	parseCmd := func(cmd string) (c []string) {
 		s := bufio.NewScanner(strings.NewReader(cmd))
 		s.Split(splitFunc)
