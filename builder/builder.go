@@ -9,12 +9,7 @@ import (
 	"sync"
 
 	"github.com/Tonkpils/snag/exchange"
-	"github.com/shiena/ansicolor"
 )
-
-var clearBuffer = func() {
-	fmt.Print("\033c")
-}
 
 type Config struct {
 	Build      []string
@@ -24,7 +19,7 @@ type Config struct {
 }
 
 type Builder interface {
-	Build(interface{})
+	Build(exchange.Event)
 }
 
 type CmdBuilder struct {
@@ -63,12 +58,17 @@ func New(ex exchange.SendListener, c Config) Builder {
 		runCmds[i] = parseCmd(s)
 	}
 
-	return &CmdBuilder{
+	b := &CmdBuilder{
+		ex:         ex,
 		buildCmds:  buildCmds,
 		runCmds:    runCmds,
 		depWarning: c.DepWarning,
 		verbose:    c.Verbose,
 	}
+
+	ex.Listen("rebuild", b.Build)
+
+	return b
 }
 
 func splitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -122,10 +122,9 @@ func (b *CmdBuilder) stopCurVow() {
 	b.mtx.Unlock()
 }
 
-func (b *CmdBuilder) Build(_ interface{}) {
+func (b *CmdBuilder) Build(_ exchange.Event) {
 	b.stopCurVow()
 
-	clearBuffer()
 	b.mtx.Lock()
 
 	if len(b.depWarning) > 0 {
@@ -134,13 +133,19 @@ func (b *CmdBuilder) Build(_ interface{}) {
 
 	// setup the first command
 	firstCmd := b.buildCmds[0]
-	b.curVow = VowTo(firstCmd[0], firstCmd[1:]...)
+	strs := []string{
+		fmt.Sprintf("%s %s", firstCmd[0], strings.Join(firstCmd[1:], " ")),
+	}
+	b.curVow = VowTo(b.ex, firstCmd[0], firstCmd[1:]...)
 
 	// setup the remaining commands
 	for i := 1; i < len(b.buildCmds); i++ {
 		cmd := b.buildCmds[i]
+		strs = append(strs, fmt.Sprintf("%s %s", cmd[0], strings.Join(cmd[1:], " ")))
 		b.curVow = b.curVow.Then(cmd[0], cmd[1:]...)
 	}
+
+	b.ex.Send("update-commands", strs)
 
 	// setup all parallel commands
 	for i := 0; i < len(b.runCmds); i++ {
@@ -148,7 +153,7 @@ func (b *CmdBuilder) Build(_ interface{}) {
 		b.curVow = b.curVow.ThenAsync(cmd[0], cmd[1:]...)
 	}
 	b.curVow.Verbose = b.verbose
-	go b.curVow.Exec(ansicolor.NewAnsiColorWriter(os.Stdout))
+	go b.curVow.Exec()
 
 	b.mtx.Unlock()
 }

@@ -1,13 +1,10 @@
 package builder
 
 import (
-	"bytes"
-	"fmt"
-	"io/ioutil"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/Tonkpils/snag/exchange"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,10 +14,17 @@ var (
 	failScript = "../fixtures/fail.sh"
 )
 
+type TestExchange struct{}
+
+func (ts *TestExchange) Send(event string, data interface{}) {}
+
+func (ts *TestExchange) Listen(event string, fn func(ev exchange.Event)) {
+}
+
 func TestTo(t *testing.T) {
 	cmd := "foo"
 	args := []string{"Hello", "Worlf!"}
-	vow := VowTo(cmd, args...)
+	vow := VowTo(&TestExchange{}, cmd, args...)
 	require.NotNil(t, vow)
 
 	assert.Len(t, vow.cmds, 1)
@@ -48,7 +52,7 @@ func TestThenAsync(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
-	v := VowTo(echoScript)
+	v := VowTo(&TestExchange{}, echoScript)
 	for i := 0; i < 50; i++ {
 		v = v.Then(echoScript)
 	}
@@ -59,7 +63,7 @@ func TestStop(t *testing.T) {
 	started := make(chan struct{})
 	go func() {
 		close(started)
-		result <- v.Exec(ioutil.Discard)
+		result <- v.Exec()
 	}()
 	<-started
 
@@ -71,10 +75,10 @@ func TestStop(t *testing.T) {
 }
 
 func TestStopAsync(t *testing.T) {
-	v := VowTo(echoScript)
+	v := VowTo(&TestExchange{}, echoScript)
 	v.ThenAsync(echoScript)
 
-	require.True(t, v.Exec(ioutil.Discard))
+	require.True(t, v.Exec())
 	<-time.After(10 * time.Millisecond)
 
 	v.Stop()
@@ -87,81 +91,39 @@ func TestStopAsync(t *testing.T) {
 }
 
 func TestExec(t *testing.T) {
-	var testBuf bytes.Buffer
-
-	v := VowTo(echoScript)
+	v := VowTo(&TestExchange{}, echoScript)
 	v.Then(echoScript)
-	result := v.Exec(&testBuf)
 
-	e := fmt.Sprintf(
-		"%s %s%s%s %s%s",
-		statusInProgress,
-		echoScript,
-		statusPassed,
-		statusInProgress,
-		echoScript,
-		statusPassed,
-	)
-	assert.Equal(t, e, testBuf.String())
+	result := v.Exec()
+
 	assert.True(t, result)
 }
 
 func TestExecCmdNotFound(t *testing.T) {
-	var testBuf bytes.Buffer
-
-	v := VowTo(echoScript)
+	v := VowTo(&TestExchange{}, echoScript)
 	v.Then("asdfasdf", "asdas")
 	v.Then("Shoud", "never", "happen")
-	result := v.Exec(&testBuf)
 
-	e := fmt.Sprintf(
-		"%s %s%s%s asdfasdf asdas%sexec: \"asdfasdf\": executable file not found in ",
-		statusInProgress,
-		echoScript,
-		statusPassed,
-		statusInProgress,
-		statusFailed,
-	)
+	result := v.Exec()
 
-	assert.True(t, strings.HasPrefix(testBuf.String(), e))
 	assert.False(t, result)
 }
 
 func TestExecCmdFailed(t *testing.T) {
-	var testBuf bytes.Buffer
-
-	v := VowTo(echoScript)
+	v := VowTo(&TestExchange{}, echoScript)
 	v.Then(failScript)
 	v.Then("Shoud", "never", "happen")
-	result := v.Exec(&testBuf)
 
-	e := fmt.Sprintf(
-		"%s %s%s%s %s%s",
-		statusInProgress,
-		echoScript,
-		statusPassed,
-		statusInProgress,
-		failScript,
-		statusFailed,
-	)
+	result := v.Exec()
 
-	assert.Equal(t, e, testBuf.String())
 	assert.False(t, result)
 }
 
 func TestVowVerbose(t *testing.T) {
-	var testBuf bytes.Buffer
-
-	v := VowTo(echoScript)
+	v := VowTo(&TestExchange{}, echoScript)
 	v.Verbose = true
-	result := v.Exec(&testBuf)
-	e := fmt.Sprintf(
-		"%s %s%shello\r\n",
-		statusInProgress,
-		echoScript,
-		statusPassed,
-	)
 
-	assert.Equal(t, e, testBuf.String())
+	result := v.Exec()
+
 	assert.True(t, result)
 }

@@ -60,6 +60,7 @@ func (sb *syncBuffer) Bytes() []byte {
 }
 
 type promise struct {
+	Name   string
 	cmdMtx sync.Mutex
 	cmd    *exec.Cmd
 	async  bool
@@ -68,6 +69,7 @@ type promise struct {
 
 func newPromise(name string, args ...string) *promise {
 	return &promise{
+		Name:   fmt.Sprintf("%s %s", name, strings.Join(args, " ")),
 		cmd:    exec.Command(name, args...),
 		killed: new(int32),
 	}

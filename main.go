@@ -8,6 +8,7 @@ import (
 
 	"github.com/Tonkpils/snag/builder"
 	"github.com/Tonkpils/snag/exchange"
+	"github.com/Tonkpils/snag/gui"
 	"github.com/Tonkpils/snag/watcher"
 )
 
@@ -51,8 +52,7 @@ func main() {
 		DepWarning: c.DepWarnning,
 		Verbose:    c.Verbose,
 	}
-	b := builder.New(ex, bc)
-	ex.Listen("rebuild", b.Build)
+	_ = builder.New(ex, bc)
 
 	w, err := watcher.New(ex, c.IgnoredItems)
 	if err != nil {
@@ -64,7 +64,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	w.Watch(wd)
+	g, err := gui.New(ex)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go w.Watch(wd)
+
+	g.Loop()
+	g.Close()
 }
 
 func handleSubCommand(cmd string) error {

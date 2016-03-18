@@ -2,11 +2,24 @@ package exchange
 
 import "sync"
 
-type queue []func(interface{})
+type queue []func(Event)
+
+type Listener interface {
+	Listen(string, func(Event))
+}
+
+type Sender interface {
+	Send(string, interface{})
+}
 
 type SendListener interface {
-	Listen(string, func(interface{}))
-	Send(string, interface{})
+	Sender
+	Listener
+}
+
+type Event struct {
+	Name    string
+	Payload interface{}
 }
 
 type Exchange struct {
@@ -20,7 +33,7 @@ func New() SendListener {
 	}
 }
 
-func (ex *Exchange) Listen(event string, fn func(interface{})) {
+func (ex *Exchange) Listen(event string, fn func(Event)) {
 	ex.mtx.Lock()
 	ex.queues[event] = append(ex.queues[event], fn)
 	ex.mtx.Unlock()
@@ -29,7 +42,7 @@ func (ex *Exchange) Listen(event string, fn func(interface{})) {
 func (ex *Exchange) Send(event string, data interface{}) {
 	ex.mtx.RLock()
 	for _, fn := range ex.queues[event] {
-		go fn(data)
+		go fn(Event{Name: event, Payload: data})
 	}
 	ex.mtx.RUnlock()
 }

@@ -1,12 +1,15 @@
 package builder
 
 import (
-	"io"
+	"io/ioutil"
 	"sync/atomic"
+
+	"github.com/Tonkpils/snag/exchange"
 )
 
 // vow represents a batch of commands being prepared to run
 type vow struct {
+	ex       exchange.Sender
 	canceled *int32
 
 	cmds    []*promise
@@ -14,8 +17,9 @@ type vow struct {
 }
 
 // VowTo returns a new vow that is configured to execute command given.
-func VowTo(name string, args ...string) *vow {
+func VowTo(ex exchange.Sender, name string, args ...string) *vow {
 	return &vow{
+		ex:       ex,
 		cmds:     []*promise{newPromise(name, args...)},
 		canceled: new(int32),
 	}
@@ -46,15 +50,31 @@ func (v *vow) isCanceled() bool {
 
 // Exec runs all of the commands a Vow has with all output redirected
 // to the given writer and returns a Result
-func (v *vow) Exec(w io.Writer) bool {
+func (v *vow) Exec() bool {
 	for i := 0; i < len(v.cmds); i++ {
 		if v.isCanceled() {
 			return false
 		}
 
-		if err := v.cmds[i].Run(w, v.Verbose); err != nil {
+		cmd := v.cmds[i]
+		v.ex.Send("update-command", map[string]interface{}{
+			"index":   i,
+			"state":   "running",
+			"command": cmd.Name,
+		})
+		if err := v.cmds[i].Run(ioutil.Discard, v.Verbose); err != nil {
+			v.ex.Send("update-command", map[string]interface{}{
+				"index":   i,
+				"state":   "failed",
+				"command": cmd.Name,
+			})
 			return false
 		}
+		v.ex.Send("update-command", map[string]interface{}{
+			"index":   i,
+			"state":   "passed",
+			"command": cmd.Name,
+		})
 	}
 	return true
 }

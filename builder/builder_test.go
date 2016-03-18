@@ -21,7 +21,7 @@ func TestNewBuilder(t *testing.T) {
 		Run:     []string{"echo async here"},
 		Verbose: true,
 	}
-	b := New(nil, c)
+	b := New(&TestExchange{}, c)
 	require.NotNil(t, b)
 
 	cb, ok := b.(*CmdBuilder)
@@ -78,7 +78,7 @@ func TestNewBuilder_CmdWithQuotes(t *testing.T) {
 			Run:   []string{test.Command},
 		}
 
-		b := New(nil, c)
+		b := New(&TestExchange{}, c)
 		require.NotNil(t, b)
 
 		cb, ok := b.(*CmdBuilder)
